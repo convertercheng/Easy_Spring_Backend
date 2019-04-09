@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.OrderParkingMapper">
+    <select id="orderPage" resultType="com.qhieco.response.data.web.OrderParkingData"
+            parameterType="com.qhieco.request.web.OrderRequest">
+        SELECT *  FROM (SELECT t1.id,t1.reserve_id reserveId,t1.`serial_number` serialNumber,t1.`mobile_user_id` mobileUserId,
+        t1.`reservation_id` reservationId,t1.`parkloc_id` parklocId,t1.`real_start_time` realStartTime,
+        t1.`real_end_time` realEndTime,t1.`total_fee` totalFee,t1.`discount_fee` discountFee,t1.`real_fee` realFee,
+        t1.`tripartite_fee` tripartiteFee,t1.`pay_channel` payChannel,t1.`invoice_state` invoiceState,
+        t1.`trade_no` tradeNo,t1.`platform_income` platformIncome,t1.`owner_income` ownerIncome,
+        t1.`manage_income` manageIncome,t1.`create_time` createTime,t1.`pay_time` payTime,t1.`cancel_time` cancelTime,
+        t1.`overtime` overtime,t1.`overtime_fee` overtimeFee,t1.`state`, t2.`phone`,t6.id parklotId,
+        t3.`start_time` startTime,t3.`end_time` endTime,(SELECT t_plate.`number` FROM t_plate WHERE
+        t1.`plate_id`=t_plate.`id` AND t_plate.`state`=1) plateNumber,
+        t5.`number` parkingNumber,t6.`name`
+        parklotName,t6.`type` parklotType,t1.trade_no,
+        (SELECT phone FROM t_user_mobile WHERE id=(SELECT t_parkloc.`mobile_user_id`
+        FROM t_parkloc WHERE t_parkloc.`id`=t1.`parkloc_id` )) parkingPhone
+        FROM t_order_parking t1
+        LEFT JOIN t_user_mobile t2 ON t2.`id`=t1.`mobile_user_id`
+        LEFT JOIN t_reservation t3 ON t3.`id`=t1.`reservation_id`
+        LEFT JOIN t_parkloc t5 ON t5.`id`=t1.`parkloc_id`
+        LEFT JOIN t_parklot t6 ON t6.`id`=t5.`parklot_id`) t8
+        <include refid="orderPageWhere"/>
+        ORDER BY t8.createTime DESC
+         LIMIT #{start},#{length}
+    </select>
+
+    <select id="corderPageTotalCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.OrderRequest">
+        SELECT  COUNT(*)  FROM (SELECT t1.id,t1.reserve_id reserveId,t1.`serial_number` serialNumber,t1.`mobile_user_id` mobileUserId,
+        t1.`reservation_id` reservationId,t1.`parkloc_id` parklocId,t1.`real_start_time` realStartTime,
+        t1.`real_end_time` realEndTime,t1.`total_fee` totalFee,t1.`discount_fee` discountFee,t1.`real_fee` realFee,
+        t1.`tripartite_fee` tripartiteFee,t1.`pay_channel` payChannel,t1.`invoice_state` invoiceState,
+        t1.`trade_no` tradeNo,t1.`platform_income` platformIncome,t1.`owner_income` ownerIncome,
+        t1.`manage_income` manageIncome,t1.`create_time` createTime,t1.`pay_time` payTime,t1.`cancel_time` cancelTime,
+        t1.`overtime` overtime,t1.`overtime_fee`,t1.`state`, t2.`phone`,
+        t3.`start_time` startTime,t3.`end_time` endTime,(SELECT t_plate.`number` FROM t_plate WHERE
+        t1.`plate_id`=t_plate.`id` AND t_plate.`state`=1) plateNumber,
+        t5.`number` parkingNumber,t6.`name`
+        parklotName,t6.`type` parklotType,
+        (SELECT phone FROM t_user_mobile WHERE id=(SELECT t_parkloc.`mobile_user_id`
+        FROM t_parkloc WHERE t_parkloc.`id`=t1.`parkloc_id` )) parkingPhone
+        FROM t_order_parking t1
+        LEFT JOIN t_user_mobile t2 ON t2.`id`=t1.`mobile_user_id`
+        LEFT JOIN t_reservation t3 ON t3.`id`=t1.`reservation_id`
+        LEFT JOIN t_parkloc t5 ON t5.`id`=t1.`parkloc_id`
+        LEFT JOIN t_parklot t6 ON t6.`id`=t5.`parklot_id`) t8
+        <include refid="orderPageWhere"/>
+    </select>
+
+    <sql id="orderPageWhere">
+        WHERE t8.reserveId IS NOT NULL
+        <if test="id!=null">
+            AND t8.id  LIKE  concat(concat('%',#{id}),'%')
+        </if>
+        <if test="phone!=null and phone!='' ">
+            AND t8.phone  LIKE concat(concat('%',#{phone}),'%')
+        </if>
+        <if test="serialNumber!=null and serialNumber!='' ">
+            AND t8.serialNumber  LIKE concat(concat('%',#{serialNumber}),'%')
+        </if>
+        <if test="tradeNo!=null and tradeNo!='' ">
+            AND t8.tradeNo  LIKE  concat(concat('%',#{tradeNo}),'%')
+        </if>
+        <if test="parklotType!=null">
+            AND t8.parklotType  =  #{parklotType}
+        </if>
+        <if test="parkingPhone!=null and parkingPhone!='' ">
+            AND t8.parkingPhone  LIKE  concat(concat('%',#{parkingPhone}),'%')
+        </if>
+        <if test="parklotName!=null and parklotName!='' ">
+            AND t8.parklotName  LIKE  concat(concat('%',#{parklotName}),'%')
+        </if>
+        <if test="plateNumber!=null and plateNumber!='' ">
+            AND t8.plateNumber  LIKE  concat(concat('%',#{plateNumber}),'%')
+        </if>
+        <if test="startCreateTime!=null and startCreateTime!='' and endCreateTime!=null and endCreateTime!='' ">
+            AND t8.createTime  BETWEEN #{startCreateTime} AND #{endCreateTime}
+        </if>
+        <if test="stateList!=null and stateList.size()>0">
+            AND t8.state IN
+            <foreach collection="stateList" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+</mapper>

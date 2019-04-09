@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.AccessMapper">
+<select id="queryAccessListByOrderId" resultType="com.qhieco.response.data.api.AccessRespData">
+        SELECT ta.id, ta.`name` NAME, ta.bt_name btName, ta.bt_pwd btPwd
+          FROM t_access ta WHERE ta.`parklot_id`=(SELECT parklot_id FROM t_order_parking WHERE id=#{orderId} LIMIT 1) AND ta.`state`=#{state}
+    </select>
+
+    <select id="queryAccessListByUserId" resultType="com.qhieco.response.data.api.AccessRespData">
+        select ta.id, ta.`name` name, ta.bt_name btName, ta.bt_pwd btPwd from t_access ta
+         where ta.parklot_id in(select tp.parklot_id from t_parkloc tp where tp.mobile_user_id = #{userId});
+    </select>
+</mapper>

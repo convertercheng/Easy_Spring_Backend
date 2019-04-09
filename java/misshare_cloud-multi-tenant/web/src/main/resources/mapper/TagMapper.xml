@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.TagMapper">
+
+    <sql id="sqlCondition">
+        <if test="phone != null and phone != ''">
+            AND tum.`phone` LIKE concat('%', #{phone}, '%')
+        </if>
+        <if test="userType != null and userType != -1">
+            AND tum.`type`=#{userType}
+        </if>
+    </sql>
+
+    <select id="countRepeatTagName" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM t_tag tt WHERE tt.`name`=#{tagName} AND tt.`state`=1
+        <if test="tagId != null">
+            AND tt.`id`!=#{tagId}
+        </if>
+    </select>
+
+    <insert id="insertBatchUserTag">
+        INSERT INTO b_user_tag (mobile_user_id, tag_id, create_time, modify_time, state) VALUES
+        <foreach collection="userTagList" index="index" separator="," item="usertag">
+            ( #{usertag.mobileUserId}, #{usertag.tagId}, #{usertag.createTime}, #{usertag.modifyTime}, #{usertag.state})
+        </foreach>
+    </insert>
+
+    <select id="queryCountTagUser" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM t_user_mobile tum WHERE tum.`state`=1
+        <include refid="sqlCondition"/>
+    </select>
+
+    <select id="queryTagUserList" resultType="com.qhieco.response.data.web.TagUserListData">
+       <choose>
+            <when test="tagId == null">
+                SELECT tum.`id` userId, tum.`phone` phone,
+                CASE tum.`type` WHEN 0 THEN '车主' WHEN 1 THEN '业主' WHEN 2 THEN '管理员' ELSE '其他' END userTypeStr,
+                0 isBind
+                FROM t_user_mobile tum WHERE tum.`state`=1
+                <include refid="sqlCondition"/>
+                ORDER BY tum.`id` DESC
+            </when>
+            <otherwise>
+                SELECT userId, phone, userTypeStr, isBind FROM (
+                    (SELECT tum.`id` userId, tum.`phone` phone,
+                    CASE tum.`type` WHEN 0 THEN '车主' WHEN 1 THEN '业主' WHEN 2 THEN '管理员' ELSE '其他' END userTypeStr,
+                    IF(but.`tag_id` IS NULL, 0, 1) isBind
+                    FROM  t_user_mobile tum INNER JOIN b_user_tag but ON tum.`id`=but.`mobile_user_id` AND but.`state`=1
+                    AND but.`tag_id`=#{tagId}
+                    WHERE tum.`state`=1
+                    <include refid="sqlCondition"/>
+                    )
+                    UNION
+                    (SELECT tum.`id` userId, tum.`phone` phone,
+                    CASE tum.`type` WHEN 0 THEN '车主' WHEN 1 THEN '业主' WHEN 2 THEN '管理员' ELSE '其他' END userTypeStr,
+                    0 isBind
+                    FROM t_user_mobile tum WHERE tum.`state`=1
+                    <include refid="sqlCondition"/>
+                    )
+                ) temp GROUP BY userId ORDER BY isBind DESC, userId DESC
+            </otherwise>
+        </choose>
+        <if test="startPage != null and pageSize != null">
+            LIMIT #{startPage}, #{pageSize};
+        </if>
+    </select>
+
+    <select id="queryTagUserList11" resultType="com.qhieco.response.data.web.TagUserListData">
+       <choose>
+            <when test="tagId == null">
+                SELECT tum.`id` userId, tum.`phone` phone,
+                CASE tum.`type` WHEN 0 THEN '车主' WHEN 1 THEN '业主' WHEN 2 THEN '管理员' ELSE '其他' END userTypeStr,
+                0 isBind
+                FROM t_user_mobile tum WHERE tum.`state`=1
+                <include refid="sqlCondition"/>
+                ORDER BY tum.`id` DESC
+            </when>
+            <otherwise>
+                SELECT tum.`id` userId, tum.`phone` phone,
+                CASE tum.`type` WHEN 0 THEN '车主' WHEN 1 THEN '业主' WHEN 2 THEN '管理员' ELSE '其他' END userTypeStr,
+                IF(but.`tag_id` IS NULL, 0, 1) isBind
+                FROM t_user_mobile tum LEFT JOIN b_user_tag but ON tum.`id`=but.`mobile_user_id` AND but.`state`=1
+                AND but.`tag_id`=#{tagId}
+                WHERE tum.`state`=1
+                <include refid="sqlCondition"/>
+                ORDER BY but.id IS NULL, tum.`id` DESC
+            </otherwise>
+        </choose>
+        <if test="startPage != null and pageSize != null">
+            LIMIT #{startPage}, #{pageSize};
+        </if>
+    </select>
+
+    <select id="queryTagManualInfoByTagId" resultType="com.qhieco.response.data.web.TagManualData">
+        SELECT tt.id tagId, tt.`comment` COMMENT, tt.`name` NAME FROM t_tag tt WHERE id=#{tagId}
+    </select>
+
+    <select id="queryBindUserInfoByTagId" resultType="com.qhieco.response.data.web.TagUserListData">
+         SELECT tum.`id` userId, tum.`phone` phone,
+        CASE tum.`type` WHEN 0 THEN '车主' WHEN 1 THEN '业主' WHEN 2 THEN '管理员' ELSE '其他' END userTypeStr,
+        1 isBind
+        FROM t_user_mobile tum INNER JOIN b_user_tag but ON tum.`id`=but.`mobile_user_id` AND but.`state`=1
+         AND but.`tag_id`=#{tagId} WHERE tum.`state`=1
+        ORDER BY but.id IS NULL, tum.`id` DESC
+    </select>
+</mapper>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>web-bitem</artifactId>
+	<version>2.0.1</version>
+	<packaging>war</packaging>
+
+	<name>web-bitem</name>
+	<description>web后台业务层与逻辑层</description>
+
+	<parent>
+		<groupId>com.qhieco</groupId>
+		<artifactId>misshare</artifactId>
+		<version>2.0.1</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.qhieco</groupId>
+			<artifactId>common-entity</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.qhieco</groupId>
+			<artifactId>common-repo</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.qhieco</groupId>
+			<artifactId>common-utils</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.qhieco</groupId>
+			<artifactId>web-bitem-service</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.qhieco</groupId>
+			<artifactId>web-bitem-service</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+		<!-- shiro -->
+		<dependency>
+			<groupId>org.apache.shiro</groupId>
+			<artifactId>shiro-core</artifactId>
+			<version>1.2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.shiro</groupId>
+			<artifactId>shiro-spring</artifactId>
+			<version>1.2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.shiro</groupId>
+			<artifactId>shiro-ehcache</artifactId>
+			<version>1.2.2</version>
+		</dependency>
+		<!-- 在打包时需要加上<scope> -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<!--<scope>provided</scope>-->
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>druid</artifactId>
+			<version>RELEASE</version>
+		</dependency>
+	</dependencies>
+
+	<!-- 多模块打包：只需在启动类所在的模块中指定打包插件 -->
+	<build>
+		<plugins>
+			<plugin>
+				<!-- 该插件用于构建可执行的JAR -->
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

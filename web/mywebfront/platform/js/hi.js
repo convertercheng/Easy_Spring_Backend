@@ -1,0 +1,3 @@
+function sayScript(){
+	alert("hi!");
+}

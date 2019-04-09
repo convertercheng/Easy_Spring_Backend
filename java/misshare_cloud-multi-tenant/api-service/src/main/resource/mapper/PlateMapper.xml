@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.PlateMapper">
+<select id="queryPlateListByUserId" resultType="com.qhieco.response.data.api.PlateRepData">
+        SELECT tp.id plateId, tp.number number from t_plate tp INNER JOIN b_user_plate bup on tp.id=bup.plate_id where
+        bup.state=#{state} and tp.state=#{state} and bup.mobile_user_id=#{userId}  ORDER BY tp.create_time DESC LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    <select id="queryPlateInfoByPlateIdAdUserId" resultType="java.util.HashMap">
+        SELECT tp.number plateNo, tp.id plateId from b_user_plate bup INNER JOIN t_plate tp ON tp.id=bup.plate_id
+         WHERE tp.id=#{plateId} AND bup.state=#{valid} AND bup.mobile_user_id=#{userId}
+    </select>
+</mapper>

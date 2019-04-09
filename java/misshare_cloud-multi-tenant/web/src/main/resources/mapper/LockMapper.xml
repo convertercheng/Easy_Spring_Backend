@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.LockMapper">
+    <select id="queryNameAdMacDuplicate" resultType="java.lang.Integer">
+        SELECT count(1) from t_lock tl WHERE (tl.bt_name=#{btName} OR tl.bt_mac=#{btMac})
+        <if test="lockId != null and lockId != ''">
+            AND tl.id != #{lockId}
+        </if>
+    </select>
+</mapper>

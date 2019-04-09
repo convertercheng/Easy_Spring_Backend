@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.PrizeReceiveRecordMapper">
+    <resultMap id="prizeReceiveRecordMap" type="com.qhieco.response.data.web.PrizeReceiveRecordData">
+        <id property="id" column="id"/>
+        <result property="prizeName" column="prizeName"/>
+        <result property="phone" column="phone"/>
+        <result property="number" column="number"/>
+        <result property="activityName" column="activityName"/>
+        <result property="createTime" column="createTime"/>
+        <result property="triggerTypes" column="triggerTypes"/>
+    </resultMap>
+
+    <sql id="sqlCondition">
+        <if test="prizeName != null and prizeName != ''">
+            AND tp.`name` LIKE concat('%', #{prizeName}, '%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND tprr.phone LIKE concat('%', #{phone}, '%')
+        </if>
+        <if test="triggerType != null and triggerType != -1">
+            AND tart.`trigger_type`= #{triggerType}
+        </if>
+        <if test="time != null and time != ''">
+            AND FROM_UNIXTIME(tprr.`create_time`/1000, '%Y%m%d') = #{time}
+        </if>
+    </sql>
+
+    <select id="queryPrizeReceiveListByCondition" resultMap="prizeReceiveRecordMap">
+        SELECT tprr.`id`, tp.`name` prizeName, tprr.`phone`, tprr.`number`, tac.`name` activityName, group_concat(tart.`trigger_type`)
+        triggerTypes, tprr.`create_time` createTime
+        FROM t_prize_receive_record tprr
+        INNER JOIN t_prize tp ON tprr.`prize_id`=tp.`id`
+        INNER JOIN t_activity tac ON tprr.`activity_id`=tac.`id`
+        INNER JOIN t_activity_rule_trigger tart ON tart.`activity_rule_id`=tprr.`activity_rule_id` WHERE 1=1
+        <include refid="sqlCondition"/>
+        GROUP BY tprr.`id`
+        ORDER BY tprr.`id` DESC
+        <if test="startPage != null and pageSize != null">
+            limit #{startPage}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="queryCountPrizeReceiveListByCondition" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT tprr.`id`)
+        FROM t_prize_receive_record tprr
+        INNER JOIN t_prize tp ON tprr.`prize_id`=tp.`id`
+        INNER JOIN t_activity tac ON tprr.`activity_id`=tac.`id`
+        INNER JOIN t_activity_rule_trigger tart ON tart.`activity_rule_id`=tprr.`activity_rule_id` WHERE 1=1
+        <include refid="sqlCondition"/>
+    </select>
+</mapper>

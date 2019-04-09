@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webbitemmapper.UserBItemWebMapper">
+    <select id="pageUser" parameterType="com.qhieco.request.web.UserRequest" resultType="com.qhieco.response.data.web.UserData">
+        SELECT  t1.id,
+                t1.username,
+                t1.name,
+                t1.state,
+                t1.latest_login_time latestLoginTime,
+                t1.company_name as companyName,
+                t1.liaisons,
+                t1.liaisons_phone as liaisonsPhone,
+                t1.create_time as createTime
+          FROM bi_user_web t1
+            WHERE 1=1
+            <if test="state!=null">
+                AND t1.state=#{state}
+            </if>
+            <if test="liaisonsPhone!=null and liaisonsPhone!='' ">
+                AND t1.liaisons_phone LIKE concat(concat('%',#{liaisonsPhone}),'%')
+            </if>
+            <if test="username!=null and username!='' ">
+                AND t1.username LIKE concat(concat('%',#{username}),'%')
+            </if>
+            <if test="pid!=null">
+                AND t1.pid=#{pid}
+            </if>
+            ORDER by t1.id DESC
+            LIMIT #{start},#{length}
+    </select>
+
+    <select id="pageUserTotalCount" parameterType="com.qhieco.request.web.UserRequest" resultType="java.lang.Integer">
+            SELECT
+                COUNT(*)
+            FROM bi_user_web t1
+                WHERE 1=1
+            <if test="state!=null">
+                AND t1.state=#{state}
+            </if>
+            <if test="liaisonsPhone!=null and liaisonsPhone!='' ">
+                AND t1.liaisons_phone LIKE concat(concat('%',#{liaisonsPhone}),'%')
+            </if>
+            <if test="username!=null and username!='' ">
+                AND t1.username LIKE concat(concat('%',#{username}),'%')
+            </if>
+            <if test="pid!=null">
+                AND t1.pid=#{pid}
+            </if>
+    </select>
+
+    <select id="getUserByUserName" parameterType="java.lang.String" resultType="java.lang.Integer">
+            SELECT id FROM bi_user_web where username=#{username} AND state = 1
+    </select>
+
+    <select id="findOne" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.web.UserData">
+            SELECT * FROM bi_user_web where id = #{id}
+    </select>
+
+    <sql id="pageUserWhere">
+          <where>
+              1=1
+              <if test="id!=null and id!='' ">
+                  AND t3.id = #{id}
+              </if>
+          </where>
+    </sql>
+
+    <select id="findRoleByRoleName" parameterType="java.lang.String" resultType="com.qhieco.response.data.web.UserData">
+        SELECT r.name AS roleName,r.id AS roleId
+          FROM bi_role r
+          left join bi_user_role ur on r.id = ur.role_id
+          where r.name = #{roleCode}
+          LIMIT 0,1
+    </select>
+
+    <insert id="updateRoleByUser">
+        insert into bi_user_role(role_id,user_id) value(#{roleId},#{userId});
+    </insert>
+
+    <!-- 更新登录密码 -->
+    <update id="updateLoginPass" parameterType="com.qhieco.request.web.UserRequest">
+        UPDATE  bi_user_web SET password=#{checkPass} WHERE id = #{id}
+    </update>
+
+</mapper>

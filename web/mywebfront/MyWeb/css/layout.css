@@ -1,0 +1,22 @@
+.Top{
+	height: 300px;
+	
+
+}
+.Top.title{
+	padding:0,0,2px,0;
+	font-size:12px;
+	background:url(../img/title.jpg);
+	height: 228px;
+	align-content: center;
+}
+.Top.netlink{
+	height: 24px;
+	background-color: #f5f6aa;
+}
+.Top.netlink.Top-guide{
+	padding-left: 30px;
+	font-size: 24px;
+	display: block;
+	
+}

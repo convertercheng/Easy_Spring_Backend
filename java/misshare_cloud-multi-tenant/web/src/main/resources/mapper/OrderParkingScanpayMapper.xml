@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.OrderParkingScanpayMapper">
+
+    <sql id="conditionSql">
+        <if test="serialNumber != null and serialNumber != ''">
+            AND tops.`serial_number` LIKE concat('%', #{serialNumber}, '%')
+        </if>
+        <if test="unionId != null and unionId != ''">
+            AND tops.`union_id` LIKE concat('%', #{unionId}, '%')
+        </if>
+        <if test="parklotName != null and parklotName != ''">
+            AND tpt.`name` LIKE concat('%', #{parklotName}, '%')
+        </if>
+        <if test="plateNo != null and plateNo != ''">
+            AND tops.`plate_no` LIKE concat('%', #{plateNo}, '%')
+        </if>
+        <if test="payChannel != null and payChannel != -1">
+            AND tops.`pay_channel` = #{payChannel}
+        </if>
+        <if test="state != null and state != -1">
+            AND tops.`state` = #{state}
+        </if>
+        <if test="parklotType != null and parklotType != -1">
+            AND tpt.`type` = #{parklotType}
+        </if>
+        <if test="startCreateTime != null">
+            AND tops.`create_time` <![CDATA[ <= ]]>  #{startCreateTime}
+        </if>
+        <if test="endCreateTime != null">
+            AND tops.`create_time` >= #{endCreateTime}
+        </if>
+        <if test="id != null">
+            AND tops.id = #{orderId}
+        </if>
+    </sql>
+    <select id="queryOrderScanpayListByCondition" parameterType="com.qhieco.request.web.OrderScanpayRequest"
+                resultType="com.qhieco.response.data.web.OrderScanpayData">
+        SELECT tops.id, tpt.`name` parklotName, tpt.`type` parklotType, tpt.`kind` parklotKind,
+        tops.`union_id` unionId, tops.`serial_number` serialNumber, tops.`plate_no` plateNo, tops.`real_start_time`
+        realStartTime, tops.`real_end_time` realEndTime, tops.`total_fee` totalFee, tops.`discount_fee` discountFee, tops.`real_fee` realFee,
+        tops.`tripartite_fee` tripartiteFee, tops.`pay_channel` payChannel, tops.`trade_no` tradeNo, tops.`create_time` createTime,
+        tops.`pay_time` payTime, tops.`cancel_time` cancelTime, tops.`state` state, tops.`extract_order_id` extractOrderId
+        FROM t_order_parking_scanpay tops INNER JOIN t_parklot tpt ON tops.`parklot_id` = tpt.`id` WHERE 1=1
+        <include refid="conditionSql"></include>
+        <if test="start != null and length != null">
+            limit #{start}, #{length}
+        </if>
+    </select>
+    
+    <select id="queryCountOrderScanpayListByCondition" parameterType="com.qhieco.request.web.OrderScanpayRequest"
+            resultType="java.lang.Integer">
+         SELECT COUNT(tops.id) FROM t_order_parking_scanpay tops INNER JOIN t_parklot tpt ON tops.`parklot_id` = tpt.`id` WHERE 1=1
+        <include refid="conditionSql"></include>
+    </select>
+    
+</mapper>

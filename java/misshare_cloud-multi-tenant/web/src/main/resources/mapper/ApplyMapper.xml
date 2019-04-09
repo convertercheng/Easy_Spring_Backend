@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.ApplyParklocMapper">
+    <select id="pageApply" resultType="com.qhieco.response.data.web.ApplyParklocData"
+            parameterType="com.qhieco.request.web.ApplyParklocRequest">
+        SELECT t10.* FROM(SELECT t1.`id`,t1.`parklot_name` parklotName,t2.`phone` userPhone,t1.`contact_phone` contactPhone,t1.`apply_time` applyTime,
+        t1.area_id areaId,t1.`complete_time` completeTime,t1.`state`,(CAST(CONCAT(IFNULL((SELECT NAME FROM t_area t5 WHERE t5.id=(SELECT parent_id FROM t_area t3 WHERE t3.id=
+        (SELECT parent_id FROM t_area t4 WHERE t4.id=t1.`area_id`))),''),IFNULL((SELECT NAME FROM t_area t3 WHERE t3.id=
+        (SELECT parent_id FROM t_area t4 WHERE t4.id=t1.`area_id`)),''),
+        IFNULL((SELECT NAME FROM t_area t6 WHERE t6.id=t1.`area_id`),'')) AS CHAR(100))) areaName FROM t_apply_parkloc t1
+        LEFT JOIN t_user_mobile t2 ON t2.id=t1.`mobile_user_id` ORDER BY t1.id DESC) t10
+         <include refid="pageApplyWhere"/>
+         ORDER BY t10.id DESC
+         LIMIT #{start},#{length}
+    </select>
+
+    <select id="pageApplyTotalCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.ApplyParklocRequest">
+        SELECT COUNT(*) FROM(SELECT t1.`id`,t1.`parklot_name` parklotName,t2.`phone` userPhone,t1.`contact_phone` contactPhone,t1.`apply_time` applyTime,
+        t1.area_id areaId,t1.`complete_time` completeTime,t1.`state`,(CAST(CONCAT((SELECT NAME FROM t_area t5 WHERE t5.id=(SELECT parent_id FROM t_area t3 WHERE t3.id=
+        (SELECT parent_id FROM t_area t4 WHERE t4.id=t1.`area_id`))),(SELECT NAME FROM t_area t3 WHERE t3.id=
+        (SELECT parent_id FROM t_area t4 WHERE t4.id=t1.`area_id`)),
+        (SELECT NAME FROM t_area t6 WHERE t6.id=t1.`area_id`)) AS CHAR(100))) areaName FROM t_apply_parkloc t1
+        LEFT JOIN t_user_mobile t2 ON t2.id=t1.`mobile_user_id`) t10
+        <include refid="pageApplyWhere"/>
+    </select>
+
+    <select id="excelApply" resultType="com.qhieco.response.data.web.ApplyParklocData"
+            parameterType="com.qhieco.request.web.ApplyParklocRequest">
+        SELECT t10.* FROM(SELECT t1.`id`,t1.`parklot_name` parklotName,t2.`phone` userPhone,t1.`contact_phone` contactPhone,t1.`apply_time` applyTime,
+        t1.area_id areaId,t1.`complete_time` completeTime,t1.`state`,(CAST(CONCAT((SELECT NAME FROM t_area t5 WHERE t5.id=(SELECT parent_id FROM t_area t3 WHERE t3.id=
+        (SELECT parent_id FROM t_area t4 WHERE t4.id=t1.`area_id`))),(SELECT NAME FROM t_area t3 WHERE t3.id=
+        (SELECT parent_id FROM t_area t4 WHERE t4.id=t1.`area_id`)),
+        (SELECT NAME FROM t_area t6 WHERE t6.id=t1.`area_id`)) AS CHAR(100))) areaName FROM t_apply_parkloc t1
+        LEFT JOIN t_user_mobile t2 ON t2.id=t1.`mobile_user_id`) t10
+        <include refid="pageApplyWhere"/>
+        ORDER BY t10.id DESC
+    </select>
+
+    <sql id="pageApplyWhere">
+        <where>
+            1=1
+            <if test="areaName!=null and areaName!='' ">
+                AND t10.areaName  LIKE  concat(concat('%',#{areaName}),'%')
+            </if>
+            <if test="contactPhone!=null and contactPhone!='' ">
+                AND t10.contactPhone  LIKE  concat(concat('%',#{contactPhone}),'%')
+            </if>
+            <if test="parklotName!=null and parklotName!='' ">
+                AND t10.parklotName  LIKE  concat(concat('%',#{parklotName}),'%')
+            </if>
+            <if test="startApplyTime!=null and startApplyTime!='' and endApplyTime!=null and endApplyTime!='' ">
+                AND t10.applyTime BETWEEN  #{startApplyTime} AND #{endApplyTime}
+            </if>
+            <if test="ids!=null and ids.size()>0">
+                AND t10.areaId IN
+                <foreach collection="ids" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+</mapper>

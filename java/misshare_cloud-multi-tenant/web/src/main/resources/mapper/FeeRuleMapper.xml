@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.FeeRuleMapper">
+    <resultMap id="parkingFeeRuleMap" type="com.qhieco.response.data.web.ParkingFeeRuleInfoData">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="tenantId" column="tenantId"/>
+        <collection property="feeRuleParkings" ofType="com.qhieco.commonentity.FeeRuleParking">
+            <result property="startTime" column="startTime"/>
+            <result property="endTime" column="endTime"/>
+            <result property="firstHourFee" column="firstHourFee"/>
+            <result property="otherTimePeriod" column="otherTimePeriod"/>
+            <result property="otherTimeFee" column="otherTimeFee"/>
+            <result property="maxFee" column="maxFee"/>
+            <result property="freeUseTime" column="freeUseTime"/>
+            <result property="overTimeFee" column="overTimeFee"/>
+            <result property="weekday" column="weekday"/>
+            <result property="remark" column="remark"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryParkingFeeRuleList" parameterType="com.qhieco.request.web.FeeRequest"
+            resultMap="parkingFeeRuleMap">
+        SELECT
+            <include refid="feeProperty"/>
+        from
+            t_fee_rule_parking_base frpb left join  t_fee_rule_parking frp on frpb.id = frp.fee_rule_parking_base_id and frp.state = 1
+        where
+            frpb.state = 1 and frpb.id in
+        (select temp.id from (select id from t_fee_rule_parking_base where state=1
+        <include refid="feeWhere"/>
+        order by create_time desc LIMIT #{start}, #{length}) as temp)
+
+        ORDER BY frpb.create_time DESC,frp.start_time is not null,frp.start_time asc;
+
+    </select>
+    
+    <select id="queryCountParkingFeeRuleList" parameterType="com.qhieco.request.web.FeeRequest" resultType="java.lang.Integer">
+        SELECT count(1)  from t_fee_rule_parking_base frpb WHERE 1=1  AND frpb.state != 0
+        <include refid="feeWhere"/>
+    </select>
+
+    <select id="queryParkingFeeRuleById" parameterType="java.lang.Integer"
+            resultMap="parkingFeeRuleMap">
+        SELECT
+            <include refid="feeProperty"/>
+        from
+            t_fee_rule_parking_base frpb left join  t_fee_rule_parking frp on frpb.id = frp.fee_rule_parking_base_id and frp.state = 1
+        where
+            frpb.state = 1 and frpb.id = (select pfrp.fee_rule_id from b_parklot_fee_rule_parking pfrp where pfrp.parklot_id = #{id} and pfrp.state=1)
+        ORDER BY frp.start_time is null ,frp.start_time asc
+    </select>
+
+    <select id="queryParkingFeeRuleByParkLotId" parameterType="java.lang.Integer"
+            resultMap="parkingFeeRuleMap">
+        SELECT
+            <include refid="feeProperty"/>
+        from
+            t_fee_rule_parking_base frpb left join  t_fee_rule_parking frp on frpb.id = frp.fee_rule_parking_base_id and frp.state = 1
+        where
+            frpb.state = 1 and frpb.id = (select pfrp.fee_rule_id from b_parklot_fee_rule_parking pfrp where pfrp.parklot_id = #{id} and pfrp.state=1)
+        ORDER BY frp.startTime is null ,frp.start_time asc
+    </select>
+
+    <sql id="feeProperty">
+        frpb.id as id,frpb.name as name,frpb.type as type,frp.first_hour_fee as firstHourFee,frp.other_time_period as otherTimePeriod,frp.other_time_fee as otherTimeFee,
+        frp.max_fee as maxFee,frp.free_use_time as freeUseTime,frp.over_time_fee as overTimeFee,frp.weekday as weekday,frp.start_time startTime,frp.end_time as endTime,
+        frp.remark as remark,frpb.tenant_id as tenantId
+    </sql>
+
+    <sql id="feeWhere">
+        <if test="name != '' and name != null">
+            AND name like concat('%', #{name}, '%')
+        </if>
+        <if test="tenantId != null">
+            AND tenant_id  =  #{tenantId}
+        </if>
+    </sql>
+</mapper>

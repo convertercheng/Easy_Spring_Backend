@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.PublishMapper">
+    
+    <resultMap id="ParklotIdAdParklocIdsMap" type="com.qhieco.time.ParklotIdAdParklocIds">
+        <id column="parklotId" property="parklotId"/>
+
+        <collection property="parklocInfos" ofType="com.qhieco.time.ParklocInfo">
+            <result property="parklocId" column="parklocId"/>
+        </collection>
+    </resultMap>
+
+    <update id="updatePublishOnceTimeout">
+        <![CDATA[
+          UPDATE t_publish SET state=#{invalid} WHERE state=#{valid} AND `mode`=#{once} AND end_time<=#{now};
+        ]]>
+    </update>
+    
+    <update id="updateParklocState">
+        UPDATE t_parkloc tpc SET tpc.state=#{unpublished} WHERE
+          (SELECT count(0) from t_publish WHERE parkloc_id=tpc.id AND state IN(#{tobealter}, #{tobecancelled}, #{valid})) = 0;
+    </update>
+    
+    <select id="queryValidPublishList" resultType="com.qhieco.time.ValidPublishInfo">
+        <![CDATA[
+          SELECT tp.id publishId, tp.`mode` mode, tp.parkloc_id parklocId, tp.start_time startTime, tp.end_time endTime
+         from t_publish tp WHERE tp.`mode`=#{loop} AND FIND_IN_SET(DAYOFWEEK(NOW())-1, tp.day_of_week) > 0 AND tp.state=#{valid}
+            AND tp.id NOT IN(SELECT ts.publish_id FROM t_share ts WHERE ts.publish_id=tp.id AND  ts.state<>#{invalid} AND
+                        ts.start_time=UNIX_TIMESTAMP(CONCAT(CURDATE(), FROM_UNIXTIME(tp.start_time/1000,' %H:%i:%S'))) * 1000
+                        AND ts.end_time =
+                        UNIX_TIMESTAMP(CONCAT(IF(FROM_UNIXTIME(tp.start_time/1000,'%Y-%m-%d')=FROM_UNIXTIME(tp.end_time/1000,'%Y-%m-%d')
+                            ,CURDATE(), DATE_SUB(CURDATE(),INTERVAL -1 DAY)), FROM_UNIXTIME(tp.end_time/1000, ' %H:%i:%S'))) * 1000);
+        ]]>
+    </select>
+    
+    <select id="queryNoPublishedStateParklots" parameterType="java.util.HashMap" resultMap="ParklotIdAdParklocIdsMap">
+        SELECT tpc.parklot_id parklotId, tpc.id parklocId from t_parkloc tpc WHERE
+          (SELECT count(0) from t_publish WHERE parkloc_id=tpc.id AND state IN(#{tobealter}, #{tobecancelled}, #{valid})) = 0
+	      AND tpc.state NOT IN(#{unpublished}, #{reserved})
+    </select>
+    
+    <select id="queryReservateTimeList" resultType="java.lang.Integer">
+        <![CDATA[
+        SELECT DISTINCT tpc.parklot_id parklotId FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                 WHERE
+						tpc.state ='1101' AND ts.state=1
+            AND (
+                ((ts.end_time - UNIX_TIMESTAMP(NOW())*1000) >  #{timeInterval}
+                 AND ts.start_time<=UNIX_TIMESTAMP(NOW()) *1000)
+            OR
+                ((ts.start_time - UNIX_TIMESTAMP(NOW()) *1000) <= (SELECT bpp.qhvalue VALUE FROM b_parklot_params bpp WHERE bpp.parklot_id = tpc.`parklot_id`
+                    AND bpp.state=1 AND bpp.qhkey=#{advanceReservationTimeKey} LIMIT 1)*60*1000 AND ts.start_time >=UNIX_TIMESTAMP(NOW())*1000)
+            )
+        ]]>
+    </select>
+</mapper>

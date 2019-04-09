@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.FeekBackMapper">
+    <sql id="feekbackSql">
+        <if test="phone != '' and phone != null">
+            AND tfb.mobile_user_id in(SELECT id from t_user_mobile WHERE phone LIKE concat('%', #{phone}, '%'))
+        </if>
+        <if test="startTime != '' and startTime != null and endTime != '' and endTime != null">
+            AND tfb.create_time BETWEEN #{startTime} AND #{endTime}
+        </if>
+        <if test="proIdList != null and proIdList.size > 0">
+            AND tp.id IN
+            <foreach collection="proIdList" index="index" item="proId" open="(" close=")" separator=",">
+                #{proId}
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="findFeedbackId">
+        SELECT tfb.id
+        from t_feedback tfb LEFT JOIN b_feedback_problem bfp ON bfp.feedback_id=tfb.id INNER JOIN t_problem tp ON
+        tp.id=bfp.problem_id
+        <where>
+            <if test="phone != '' and phone != null">
+                AND tfb.mobile_user_id in(SELECT id from t_user_mobile WHERE phone LIKE concat('%', #{phone}, '%'))
+            </if>
+            <if test="startTime != '' and startTime != null and endTime != '' and endTime != null">
+                AND tfb.create_time BETWEEN #{startTime} AND #{endTime}
+            </if>
+            <if test="proIdList != null and proIdList.size > 0">
+                AND tp.id IN
+                <foreach collection="proIdList" index="index" item="proId" open="(" close=")" separator=",">
+                    #{proId}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryFeekbackListByCondition" resultType="com.qhieco.response.data.web.FeedBackData">
+        SELECT tfb.id feedbackId, (SELECT phone from t_user_mobile WHERE id=tfb.mobile_user_id) phone, tfb.create_time createTime,
+        (SELECT `name` from t_parklot WHERE id=tfb.parklot_id) resource,
+        GROUP_CONCAT(tp.pro_intro) proIntro, file_ids fileIds, tfb.remark remark,
+        tfb.file_ids fileIds
+        from t_feedback tfb LEFT JOIN b_feedback_problem bfp ON bfp.feedback_id=tfb.id INNER JOIN t_problem tp ON
+        tp.id=bfp.problem_id
+        WHERE tfb.id in (<include refid="findFeedbackId"/>)
+        GROUP BY tfb.id ORDER BY tfb.id DESC
+        LIMIT #{startPage}, #{pageSize}
+    </select>
+
+    <select id="queryFeedbackListByConditionExcel" parameterType="com.qhieco.request.web.FeekbackRequest"
+            resultType="com.qhieco.response.data.web.FeedBackData">
+        SELECT tfb.id feedbackId, (SELECT phone from t_user_mobile WHERE id=tfb.mobile_user_id) phone, tfb.create_time createTime,
+        (SELECT `name` from t_parklot WHERE id=tfb.parklot_id) resource,
+        GROUP_CONCAT(tp.pro_intro) proIntro, file_ids fileIds, tfb.remark remark,
+        (SELECT  t_file.`path` FROM t_file WHERE id=file_ids) filePaths
+        from t_feedback tfb LEFT JOIN b_feedback_problem bfp ON bfp.feedback_id=tfb.id INNER JOIN t_problem tp ON
+        tp.id=bfp.problem_id
+        WHERE 1=1
+        <include refid="feekbackSql"/>
+        GROUP BY tfb.id
+        LIMIT 5000
+    </select>
+    
+    <select id="queryFeekbackCountByCodition" resultType="java.lang.Integer">
+        SELECT count(DISTINCT tfb.`id`) from t_feedback tfb LEFT JOIN b_feedback_problem bfp ON bfp.feedback_id=tfb.id
+         INNER JOIN t_problem tp ON tp.id=bfp.problem_id WHERE 1=1
+         <include refid="feekbackSql"/>
+    </select>
+</mapper>

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.UserMapper">
+    <select id="pageUser" parameterType="com.qhieco.request.web.UserRequest" resultType="com.qhieco.response.data.web.UserData">
+        SELECT DISTINCT tb5.*,
+            t4.`content`,
+            t4.`keyword`,
+            t4.`medium`,
+            t4.`series`,
+            t4.`source`,
+            up.id AS userPlateId FROM (
+            SELECT
+                t1.`id`,
+                t1.name,
+                t2.`path`,
+                t1.`phone`,
+                t1.`latest_login_time` latestLoginTime,
+                t1.`register_time` registerTime,
+                t1.`state`,
+                t1.`type` userType,
+                t5.`balance_earn` balanceEarn,
+                (SELECT wx_union_id FROM t_user_extra_info WHERE mobile_user_id=t1.`id`) wxUnionId,
+                t1.`integral`
+            FROM t_user_mobile t1
+              INNER JOIN t_balance_user t5 ON t5.`mobile_user_id`=t1.`id` AND t5.`state`=1
+              LEFT JOIN t_file t2 ON t1.`file_id`=t2.`id` AND t2.state=1
+              ORDER BY t1.id DESC
+            ) tb5
+            LEFT JOIN b_user_register t3 ON t3.`moblie_user_id`=tb5.`id` AND t3.`state`=1
+            LEFT JOIN t_register t4 ON t3.`register_id`=t4.`id` AND t4.`state`=1
+            LEFT JOIN b_user_plate up ON tb5.id=up.mobile_user_id
+              WHERE 1=1
+                <if test="id!=null and id!='' ">
+                    AND tb5.id = #{id}
+                </if>
+                <if test="phone!=null and phone!='' ">
+                    AND tb5.phone LIKE concat(concat('%',#{phone}),'%')
+                </if>
+                <if test="content!=null and content!='' ">
+                    AND t4.content LIKE concat(concat('%',#{content}),'%')
+                </if>
+                <if test="keyword!=null and keyword!='' ">
+                    AND t4.keyword LIKE concat(concat('%',#{keyword}),'%')
+                </if>
+                <if test="medium!=null and medium!='' ">
+                    AND t4.medium LIKE concat(concat('%',#{medium}),'%')
+                </if>
+                <if test="series!=null and series!='' ">
+                    AND t4.series LIKE concat(concat('%',#{series}),'%')
+                </if>
+                <if test="source!=null and source!='' ">
+                    AND t4.source LIKE concat(concat('%',#{source}),'%')
+                </if>
+                <if test="userType!=null">
+                    AND tb5.userType=#{userType}
+                </if>
+                <if test="state!=null">
+                    AND tb5.state=#{state}
+                </if>
+                <if test="beginLatestLoginTime!=null and beginLatestLoginTime!='' and endLatestLoginTime!=null and endLatestLoginTime!='' ">
+                    AND latestLoginTime BETWEEN  #{beginLatestLoginTime} AND  #{endLatestLoginTime}
+                </if>
+                <if test="beginRegisterTime!=null and beginRegisterTime!='' and endRegisterTime!=null and endRegisterTime!='' ">
+                    AND tb5.registerTime BETWEEN  #{beginRegisterTime} AND #{endRegisterTime}
+                </if>
+                <if test="isPackage!=null and isPackage==1">
+                    AND up.id IS NOT NULL
+                </if>
+                <if test="isPackage!=null and isPackage==2">
+                    AND up.id IS NULL
+                </if>
+                LIMIT #{start},#{length}
+    </select>
+    <select id="pageUserDetailed" parameterType="com.qhieco.request.web.UserRequest" resultType="com.qhieco.response.data.web.UserData">
+        SELECT t1.id,t1.phone,t1.register_time AS registerTime FROM t_user_mobile t1
+            WHERE 1=1
+            <if test="state!=null">
+                AND t1.state=#{state}
+            </if>
+            <if test="phone!=null and phone!='' ">
+                AND t1.phone LIKE concat(concat('%',#{phone}),'%')
+            </if>
+            ORDER by t1.id DESC
+            LIMIT #{start},#{length}
+    </select>
+
+    <select id="excelUser" parameterType="com.qhieco.request.web.UserRequest" resultType="com.qhieco.response.data.web.UserData">
+        SELECT * FROM(SELECT
+        (SELECT COUNT(id) FROM t_order_parking WHERE t_order_parking.`reserve_id` IS NOT NULL
+        AND t1.id=t_order_parking.mobile_user_id) orderCount,
+        (SELECT t_order_parking.`create_time` FROM t_order_parking WHERE t_order_parking.`reserve_id` IS NOT NULL
+        and t1.id=t_order_parking.mobile_user_id  ORDER BY t_order_parking.`create_time` ASC LIMIT 1) orderCreateTime,
+        t4.`content`,t4.`keyword`,t4.`medium`,t4.`series`,t4.`source`
+        ,t1.`id`,t1.name,t2.`path`,t1.`phone`,t1.`latest_login_time` latestLoginTime,t1.`register_time`
+        registerTime,t1.`state`,t1.`type` userType,t5.`balance_earn` balanceEarn ,
+        (SELECT COUNT(id) FROM t_parkloc WHERE mobile_user_id=t1.`id`) parklocCount,
+        (SELECT wx_union_id FROM t_user_extra_info WHERE mobile_user_id=t1.`id`) wxUnionId,
+        t1.`integral`
+        FROM t_user_mobile t1
+        INNER JOIN t_balance_user t5 ON t5.`mobile_user_id`=t1.`id` AND t5.`state`=1
+        LEFT JOIN t_file t2 ON t1.`file_id`=t2.`id` AND t2.state=1
+        LEFT JOIN b_user_register t3 ON t3.`moblie_user_id`=t1.`id` AND t3.`state`=1
+        LEFT JOIN t_register t4 ON t3.`register_id`=t4.`id` AND t4.`state`=1) t3
+        <include refid="pageUserWhere"/>
+        ORDER by t3.id DESC
+    </select>
+
+    <select id="pageUserTotalCount" parameterType="com.qhieco.request.web.UserRequest" resultType="java.lang.Integer">
+            SELECT COUNT( DISTINCT t5.id)
+            FROM t_user_mobile t1
+              INNER JOIN t_balance_user t5 ON t5.`mobile_user_id`=t1.`id` AND t5.`state`=1
+              LEFT JOIN t_file t2 ON t1.`file_id`=t2.`id` AND t2.state=1
+              LEFT JOIN b_user_register t3 ON t3.`moblie_user_id`=t1.`id` AND t3.`state`=1
+              LEFT JOIN t_register t4 ON t3.`register_id`=t4.`id` AND t4.`state`=1
+              LEFT JOIN b_user_plate up ON t5.id=up.mobile_user_id
+                WHERE 1=1
+                    <if test="id!=null and id!='' ">
+                        AND t1.id = #{id}
+                    </if>
+                    <if test="phone!=null and phone!='' ">
+                        AND t1.phone LIKE concat(concat('%',#{phone}),'%')
+                    </if>
+                    <if test="content!=null and content!='' ">
+                        AND t4.content LIKE concat(concat('%',#{content}),'%')
+                    </if>
+                    <if test="keyword!=null and keyword!='' ">
+                        AND t4.keyword LIKE concat(concat('%',#{keyword}),'%')
+                    </if>
+                    <if test="medium!=null and medium!='' ">
+                        AND t4.medium LIKE concat(concat('%',#{medium}),'%')
+                    </if>
+                    <if test="series!=null and series!='' ">
+                        AND t4.series LIKE concat(concat('%',#{series}),'%')
+                    </if>
+                    <if test="source!=null and source!='' ">
+                        AND t4.source LIKE concat(concat('%',#{source}),'%')
+                    </if>
+                    <if test="userType!=null">
+                        AND t1.type=#{userType}
+                    </if>
+                    <if test="state!=null">
+                        AND t1.state=#{state}
+                    </if>
+                    <if test="beginLatestLoginTime!=null and beginLatestLoginTime!='' and endLatestLoginTime!=null and endLatestLoginTime!='' ">
+                        AND t1.latest_login_time BETWEEN  #{beginLatestLoginTime} AND  #{endLatestLoginTime}
+                    </if>
+                    <if test="beginRegisterTime!=null and beginRegisterTime!='' and endRegisterTime!=null and endRegisterTime!='' ">
+                        AND t1.register_time BETWEEN  #{beginRegisterTime} AND #{endRegisterTime}
+                    </if>
+                    <if test="isPackage!=null and isPackage==1">
+                        AND up.id IS NOT NULL
+                    </if>
+                    <if test="isPackage!=null and isPackage==2">
+                        AND up.id IS NULL
+                    </if>
+    </select>
+
+    <select id="pageUserDetailedTotalCount" parameterType="com.qhieco.request.web.UserRequest" resultType="java.lang.Integer">
+            SELECT COUNT(*) FROM t_user_mobile t1
+                WHERE 1=1
+                    <if test="state!=null">
+                        AND t1.state=#{state}
+                    </if>
+                    <if test="phone!=null and phone!='' ">
+                        AND t1.phone LIKE concat(concat('%',#{phone}),'%')
+                    </if>
+    </select>
+
+    <select id="findUserPlateNumber" parameterType="java.lang.Integer" resultType="java.lang.String">
+          SELECT (SELECT t_plate.`number` FROM t_plate WHERE t_plate.`id`=plate_id and state=1) FROM b_user_plate t1 WHERE
+          t1.mobile_user_id =#{userId} and t1.state=1
+    </select>
+
+    <select id="findUserOne" parameterType="com.qhieco.request.web.UserRequest" resultType="com.qhieco.response.data.web.UserData">
+          SELECT * FROM(SELECT  t4.`content`,up.id AS userPlateId, t4.`keyword`,t4.`medium`,t4.`series`,t4.`source`,t1.`id`,t1.`phone`,t1.`register_time` registerTime,
+          t1.identity_number identityNumber,t1.name,
+        (SELECT COUNT(id) FROM t_order_parking WHERE t_order_parking.`reserve_id` IS NOT NULL
+        AND  t_order_parking.mobile_user_id=#{id}) orderCount,
+        (SELECT t_order_parking.`create_time` FROM t_order_parking WHERE t_order_parking.`reserve_id` IS NOT NULL
+        and t_order_parking.mobile_user_id=#{id}  ORDER BY t_order_parking.`create_time` ASC LIMIT 1) orderCreateTime,
+          t1.state,t5.`balance_earn`  balanceEarn FROM t_user_mobile t1
+        LEFT JOIN b_user_plate up ON t1.id=up.mobile_user_id
+        INNER JOIN t_balance_user t5 ON t5.`mobile_user_id`=t1.`id` AND t5.`state`=1
+        LEFT JOIN t_file t2 ON t1.`file_id`=t2.`id` and t2.state=1
+        LEFT JOIN b_user_register t3 ON t3.`moblie_user_id`=t1.`id` AND t3.`state`=1
+        LEFT JOIN t_register t4 ON t3.`register_id`=t4.`id` AND t4.`state`=1) t3
+        <include refid="pageUserWhere"/>
+    </select>
+
+    <sql id="pageUserWhere">
+          <where>
+              1=1
+              <if test="id!=null and id!='' ">
+                  AND t3.id = #{id}
+              </if>
+              <if test="phone!=null and phone!='' ">
+                  AND t3.phone LIKE concat(concat('%',#{phone}),'%')
+              </if>
+              <if test="content!=null and content!='' ">
+                  AND t3.content LIKE concat(concat('%',#{content}),'%')
+              </if>
+              <if test="keyword!=null and keyword!='' ">
+                  AND t3.keyword LIKE concat(concat('%',#{keyword}),'%')
+              </if>
+              <if test="medium!=null and medium!='' ">
+                  AND t3.medium LIKE concat(concat('%',#{medium}),'%')
+              </if>
+              <if test="series!=null and series!='' ">
+                  AND t3.series LIKE concat(concat('%',#{series}),'%')
+              </if>
+              <if test="source!=null and source!='' ">
+                  AND t3.source LIKE concat(concat('%',#{source}),'%')
+              </if>
+              <if test="userType!=null">
+                  AND t3.userType=#{userType}
+              </if>
+              <if test="state!=null">
+                  AND t3.state=#{state}
+              </if>
+              <if test="beginLatestLoginTime!=null and beginLatestLoginTime!='' and endLatestLoginTime!=null and endLatestLoginTime!='' ">
+                  AND latestLoginTime BETWEEN  #{beginLatestLoginTime} AND  #{endLatestLoginTime}
+              </if>
+              <if test="beginRegisterTime!=null and beginRegisterTime!='' and endRegisterTime!=null and endRegisterTime!='' ">
+                  AND t3.registerTime BETWEEN  #{beginRegisterTime} AND #{endRegisterTime}
+              </if>
+          </where>
+
+    </sql>
+
+
+    <select id="findTagUserNumber" parameterType="com.qhieco.commonentity.Tag" resultType="Integer">
+            SELECT COUNT(1) FROM t_user_mobile u WHERE u.state = 1
+            <if test="userType!=null">
+                AND u.type = #{userType}
+            </if>
+            <if test="startSignupTime!=null and endSignupTime!=null">
+                AND u.register_time BETWEEN #{startSignupTime} AND #{endSignupTime}
+            </if>
+            <if test="unsigninDays!=null and unsigninDays!=0">
+                AND unix_timestamp(now())*1000 - u.latest_login_time &gt;= #{unsigninDays}*86400000
+            </if>
+            <if test="orderNumber!=null and orderNumber!=0">
+                AND #{orderNumber} &lt;= (SELECT COUNT(1) FROM t_order_parking op WHERE op.mobile_user_id = u.id and op.state = 1304)
+            </if>
+            <if test="orderAmount!=null and orderAmount!=0">
+                AND #{orderAmount} &lt;= (SELECT SUM(op.total_fee) FROM t_order_parking op WHERE op.mobile_user_id = u.id and op.state in (1304,1301))
+            </if>
+    </select>
+
+
+    <select id="findTagUserId" parameterType="com.qhieco.commonentity.Tag" resultType="Integer">
+        SELECT u.id FROM t_user_mobile u WHERE u.state = 1
+        <if test="userType!=null">
+            AND u.type = #{userType}
+        </if>
+        <if test="startSignupTime!=null and endSignupTime!=null">
+            AND u.register_time BETWEEN #{startSignupTime} AND #{endSignupTime}
+        </if>
+        <if test="unsigninDays!=null and unsigninDays!=0">
+            AND unix_timestamp(now())*1000 - u.latest_login_time &gt;= #{unsigninDays}*86400000
+        </if>
+        <if test="orderNumber!=null and orderNumber!=0">
+            AND #{orderNumber} &lt;= (SELECT COUNT(1) FROM t_order_parking op WHERE op.mobile_user_id = u.id and op.state = 1304)
+        </if>
+        <if test="orderAmount!=null and orderAmount!=0">
+            AND #{orderAmount} &lt;= (SELECT SUM(op.total_fee) FROM t_order_parking op WHERE op.mobile_user_id = u.id and op.state in (1304,1301))
+        </if>
+    </select>
+
+
+    <select id="findMessageData" parameterType="java.lang.String" resultType="com.qhieco.response.data.web.UserMessageData">
+        SELECT um.id as userId,um.phone as phone,uei.jpush_reg_id as jpushId FROM t_user_mobile um,t_user_extra_info uei WHERE um.id = uei.mobile_user_id AND um.id IN (${_parameter});
+    </select>
+
+</mapper>

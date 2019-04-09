@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.ParklocMapper">
+
+    <select id="countByParklocNumberAdParklotId" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM t_parkloc WHERE number IN
+        <foreach collection="parklocNumbers" item="item" open="(" close=")" separator="," index="index">
+            #{item}
+        </foreach>
+        AND parklot_id = #{parklotId}
+        <if test="parklocId != 0">
+            AND id != #{parklocId}
+        </if>
+    </select>
+
+</mapper>

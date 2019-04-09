@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.UserMapper">
+<select id="queryAvatarPathByUserId" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT tf.path
+        FROM t_file tf INNER JOIN t_user_mobile tum
+        ON tf.id = tum.file_id
+        where tum.id = #{userId} and tf.state = 1
+    </select>
+    <select id="queryUserInfoByUserId" parameterType="java.lang.Integer" resultType="java.util.HashMap">
+        SELECT TYPE `type`, phone
+        FROM t_user_mobile
+        WHERE id = #{userId} AND state = 1
+    </select>
+<select id="queryUserTypeByUserId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT type
+        FROM t_user_mobile
+        WHERE id = #{userId} and state = 1
+    </select>
+    <select id="queryUserWithdrawAmountByUserId" resultType="java.math.BigDecimal">
+        SELECT balance_earn withdrawAmount from t_balance_user WHERE mobile_user_id=#{userId};
+    </select>
+    <select id="queryReservationPeriodByUserId" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT CONCAT(if(tr.start_time/1000 &lt; (unix_timestamp(date_add(curdate(), interval 1 day))), '当日', '次日'), FROM_UNIXTIME(tr.start_time/1000, '%H:%i'),'-',
+        if(tr.end_time/1000 &lt; (unix_timestamp(date_add(curdate(), interval 1 day))), '当日', '次日'), FROM_UNIXTIME(tr.end_time/1000, '%H:%i'))
+        FROM t_reservation tr INNER JOIN t_order_parking top
+        ON tr.id = top.reservation_id
+        where top.mobile_user_id = #{userId} and top.state = 1301
+         AND top.id NOT IN(SELECT reserve_id from t_order_parking WHERE reserve_id IS NOT NULL AND top.mobile_user_id = #{userId})
+    </select>
+
+    <select id="queryPlateByUserId" resultType="com.qhieco.commonentity.Plate">
+        SELECT tp.id id, tp.number
+        FROM t_plate tp INNER JOIN b_user_plate bup ON tp.id = bup.plate_id
+        WHERE bup.mobile_user_id = #{user_id}
+        AND bup.state = 1
+        AND tp.state = 1
+        ORDER BY bup.id DESC LIMIT 1
+    </select>
+    
+    </mapper>

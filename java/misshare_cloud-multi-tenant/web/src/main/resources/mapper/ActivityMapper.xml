@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.ActivityMapper">
+    <resultMap id="activityMap" type="com.qhieco.response.data.web.ActivityDetailData">
+        <id property="id" column="activityId"/>
+        <result property="name" column="name"/>
+        <result property="intro" column="intro"/>
+        <result property="beginTime" column="beginTime"/>
+        <result property="endTime" column="endTime"/>
+        <result property="type" column="activityType"/>
+        <result property="href" column="href"/>
+        <result property="fileLongPath" column="fileLongPath"/>
+        <result property="fileWidePath" column="fileWidePath"/>
+        <result property="fileLongId" column="fileLongId"/>
+        <result property="fileWideId" column="fileWideId"/>
+        <collection property="activityRules" ofType="com.qhieco.commonentity.ActivityRule">
+            <result property="id" column="ruleId"/>
+            <result property="type" column="ruleType"/>
+            <collection property="triggers" ofType="com.qhieco.response.data.web.Trigger">
+                <result property="triggerType" column="triggerType"/>
+            </collection>
+            <collection property="ladders" ofType="com.qhieco.commonentity.Ladder">
+                <result property="id" column="ladderId"/>
+                <result property="ladderStep" column="ladderStep"/>
+                <result property="type" column="ladderType"/>
+                <result property="inviteNumber" column="inviteNumber"/>
+                <result property="ladderStep" column="ladderStep"/>
+                <collection property="prizes" ofType="com.qhieco.commonentity.relational.LadderPrizeB">
+                    <result property="prizeId" column="prizeId"/>
+                    <result property="prizeNumber" column="prizeNumber"/>
+                </collection>
+            </collection>
+        </collection>
+        <collection property="activityTagBs" ofType="com.qhieco.commonentity.relational.ActivityTagB">
+            <result property="tagId" column="tagId"/>
+            <result property="type" column="tagType"/>
+        </collection>
+    </resultMap>
+
+    <sql id="conditionSql">
+        <if test="name != '' and name != null">
+            AND `name` like concat('%', #{name}, '%')
+        </if>
+        <if test="type != '' and type != null and type != -1">
+            AND type = #{type}
+        </if>
+        <if test="state == 0">
+            AND state = 0
+        </if>
+        <if test="state == 1">
+            AND state = 1 AND begin_time &lt;= unix_timestamp(now())*1000 AND end_time &gt;= unix_timestamp(now())*1000
+        </if>
+        <if test="state == 2">
+            AND state = 1 AND begin_time &gt; unix_timestamp(now())*1000
+        </if>
+        <if test="state == 3">
+            AND state = 1 AND end_time &lt; unix_timestamp(now())*1000
+        </if>
+    </sql>
+
+    <select id="queryActivityList" parameterType="com.qhieco.request.web.ActivityQuery"
+            resultType="com.qhieco.response.data.web.ActivityInfoData">
+        SELECT tac.id, tac.`name`, tac.type, tac.intro intro, tac.href, tac.begin_time beginTime, tac.end_time endTime, tac.state, tac.create_time createTime,
+            (select COUNT(1) from t_statistics sts where sts.activity_id = tac.id and sts.type = 1) browseCount,
+            (select COUNT(1) from t_statistics sts where sts.activity_id = tac.id and sts.type = 2) participateCount,
+            (select COUNT(1) from t_statistics sts where sts.activity_id = tac.id and sts.type = 3) prizeCount
+        from t_activity tac WHERE 1=1  AND state != 9999
+
+        <include refid="conditionSql"/>
+
+        ORDER BY tac.create_time DESC
+        LIMIT #{start}, #{length};
+    </select>
+    
+    <select id="queryCountActivityList" parameterType="com.qhieco.request.web.ActivityQuery" resultType="java.lang.Integer">
+            SELECT count(1)  from t_activity tac WHERE 1=1  AND state != 9999
+            <include refid="conditionSql"/>
+    </select>
+    
+    <select id="queryActivityDetailInfoById" resultMap="activityMap">
+        select a.id activityId,a.name name,a.intro intro,a.begin_time beginTime,a.end_time endTime,a.type activityType,a.href href,ar.id ruleId ,ar.type ruleType,bat.tag_id tagId,bat.type tagType,
+                art.trigger_type triggerType,la.id ladderId,la.ladder_step ladderStep,la.type ladderType,la.invite_number inviteNumber,blp.prize_id prizeId,blp.prize_number prizeNumber,
+			(SELECT tf.path from b_activity_file baf INNER JOIN t_file tf ON baf.file_id=tf.id WHERE baf.activity_id=a.id AND baf.state='1' LIMIT 1) fileLongPath,
+			(SELECT tf.path from b_activity_file baf INNER JOIN t_file tf ON baf.file_id=tf.id WHERE baf.activity_id=a.id AND baf.state='2' LIMIT 1) fileWidePath,
+			(SELECT tf.id from b_activity_file baf INNER JOIN t_file tf ON baf.file_id=tf.id WHERE baf.activity_id=a.id AND baf.state='1' LIMIT 1) fileLongId,
+			(SELECT tf.id from b_activity_file baf INNER JOIN t_file tf ON baf.file_id=tf.id WHERE baf.activity_id=a.id AND baf.state='2' LIMIT 1) fileWideId
+ from t_activity a left join t_activity_rule ar on a.id = ar.activity_id and ar.state = 1 LEFT JOIN b_activity_tag bat on a.id= bat.activity_id and bat.state=1
+	LEFT JOIN t_activity_rule_trigger art on ar.id = art.activity_rule_id and art.state = 1 LEFT JOIN t_ladder la on ar.id = la.activity_rule_id and la.state = 1
+	LEFT JOIN b_ladder_prize blp on la.id = blp.ladder_id and blp.state = 1  where a.state != 9999 and a.id = #{id}
+	order by la.ladder_step asc
+    </select>
+
+
+    <select id="findSameTimeActivity" parameterType="com.qhieco.request.web.ActivitySameTimeQuery" resultType="java.lang.Integer">
+        select COUNT(1) from t_activity tac
+        where tac.state=1 and tac.id not in(SELECT tactemp.id  from t_activity tactemp WHERE  #{endTime} &lt; tactemp.begin_time or #{beginTime} &gt; tactemp.end_time) and tac.type = #{type} and tac.end_time > UNIX_TIMESTAMP(NOW())*1000 and tac.state = 1
+        <if test="id != '' and id != null">
+            AND tac.id != #{id}
+        </if>
+    </select>
+    
+    <select id="countValidActivityPrizeByPrizeId" resultType="java.lang.Integer">
+        <![CDATA[
+            SELECT COUNT(1) FROM b_ladder_prize blp  INNER JOIN t_ladder tla ON blp.`ladder_id`=tla.`id`
+            INNER JOIN t_activity_rule tar ON tla.`activity_rule_id`=tar.`id`
+            INNER JOIN t_activity tac ON tar.`activity_id`=tac.`id` WHERE tac.`state` NOT IN(9999, 0)
+            AND tac.`end_time` > UNIX_TIMESTAMP(NOW())*1000 AND blp.`state`=1 AND tla.`state`=1 AND tar.`state`=1
+            AND blp.`prize_id`=#{prizeId}
+        ]]>
+    </select>
+</mapper>

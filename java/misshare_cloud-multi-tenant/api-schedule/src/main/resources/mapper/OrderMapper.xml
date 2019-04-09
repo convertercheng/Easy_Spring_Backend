@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.OrderMapper">
+    <select id="queryAllUnconfirmedOrderInfo" resultType="com.qhieco.time.UnconfirmedOrderInfo">
+        SELECT top.id orderId, (SELECT ts.id from t_reservation trv INNER JOIN t_share ts ON ts.id=trv.share_id WHERE top.reservation_id=trv.id) shareId
+        FROM t_order_parking top WHERE top.state=#{unconform} AND UNIX_TIMESTAMP(NOW())* 1000 - top.create_time >= #{autoCancelReservedTime};
+    </select>
+
+    <select id="queryReserveOrderList" resultType="com.qhieco.time.ReserveOrderInfo">
+       SELECT topreserve.id orderId, (SELECT ts.id from t_reservation trv INNER JOIN t_share ts ON ts.id=trv.share_id
+            WHERE topreserve.reservation_id=trv.id) shareId,
+            topreserve.platform_income platformIncome, topreserve.owner_income ownerIncome, topreserve.manage_income manageIncome
+        from t_order_parking topreserve INNER JOIN t_reservation tr ON tr.id=topreserve.reservation_id
+				WHERE reserve_id IS NULL AND topreserve.id NOT IN(SELECT reserve_id from t_order_parking
+        WHERE reserve_id IS NOT NULL) AND topreserve.state=#{reserve} AND UNIX_TIMESTAMP(NOW()) * 1000 - tr.start_time >=
+          if((SELECT bpp.qhvalue from b_parklot_params bpp WHERE bpp.parklot_id = topreserve.parklot_id AND bpp.state=#{valid} AND bpp.qhkey=#{maxDelayTimeKey}) is NULL,
+          0, (SELECT bpp.qhvalue FROM b_parklot_params bpp WHERE bpp.parklot_id = topreserve.parklot_id AND bpp.state=1 AND bpp.qhkey=#{maxDelayTimeKey}))*60 * 1000;
+    </select>
+
+    <select id="queryOrderMessageInfo" parameterType="Integer" resultType="com.qhieco.time.OrderMessageInfo">
+        SELECT op.mobile_user_id as userId,uei.jpush_reg_id as jpushId,pt.name as parklotName,pc.number as parklocNumber,r.start_time as startTime,r.end_time as endTime
+            FROM t_order_parking op ,t_user_extra_info uei ,t_parklot pt,t_parkloc pc,t_reservation r
+                WHERE op.mobile_user_id = uei.mobile_user_id and op.parklot_id = pt.id and op.parkloc_id = pc.id and op.reservation_id = r.id and op.id = #{orderId};
+    </select>
+
+    <select id="queryInvoiceInfoByOrderId" resultType="java.util.HashMap">
+        select real_fee realFee, mobile_user_id userId from t_order_parking where id=#{orderId}
+    </select>
+</mapper>

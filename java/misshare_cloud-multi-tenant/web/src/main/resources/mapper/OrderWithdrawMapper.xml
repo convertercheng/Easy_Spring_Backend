@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.OrderWithdrawMapper">
+
+    <select id="orderPage" resultType="com.qhieco.response.data.web.OrderWithdrawData"
+            parameterType="com.qhieco.request.web.OrderWithdrawRequest">
+        SELECT
+        <include refid="fieldList"/>
+        FROM
+        <include refid="tableList"/>
+        <include refid="orderWithdrawWhere"/>
+        ORDER BY ow.id DESC
+        LIMIT #{start},#{length}
+    </select>
+
+    <select id="orderWithdrawExcel" resultType="com.qhieco.response.data.web.OrderWithdrawData"
+            parameterType="com.qhieco.request.web.OrderWithdrawRequest">
+        SELECT
+        <include refid="fieldList"/>
+        FROM
+        <include refid="tableList"/>
+        <include refid="orderWithdrawWhere"/>
+        ORDER BY ow.id DESC
+    </select>
+
+    <select id="orderCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.OrderWithdrawRequest">
+        SELECT count(ow.id) FROM
+        <include refid="tableList"/>
+        <include refid="orderWithdrawWhere"/>
+    </select>
+    <sql id="fieldList">
+        ow.id,
+        um.phone,
+        ow.balance,
+        ow.apply_time applyTime,
+        ow.complete_time completeTime,
+        ow.state,
+        concat("户名:",bc.name," 账户:", bc.bank_number, " 开户行:", bc.bank) accountInfo,
+        '银行' modePayment
+
+    </sql>
+    <sql id="tableList">
+        t_order_withdraw ow
+        LEFT JOIN t_user_mobile um ON um.id = ow.mobile_user_id
+        LEFT JOIN t_bank_card bc ON bc.id = ow.bank_card_id
+    </sql>
+    <sql id="orderWithdrawWhere">
+        <where>
+            <if test="phone != null and phone !=''">
+                um.phone like concat(concat('%',#{phone}),'%')
+            </if>
+            <if test="balanceMin !=null">
+                AND <![CDATA[ ow.balance >= #{balanceMin} ]]>
+            </if>
+            <if test="balanceMax !=null">
+                AND <![CDATA[ ow.balance <= #{balanceMax} ]]>
+            </if>
+            <if test="accountInfo != null and accountInfo !=''">
+                AND (
+                bc.name like concat(concat('%',#{accountInfo}),'%')
+                OR bc.bank_number like concat(concat('%',#{accountInfo}),'%')
+                OR bc.bank like concat(concat('%',#{accountInfo}),'%')
+                )
+            </if>
+            <if test="startApplyTime!=null">
+                AND <![CDATA[ ow.apply_time>=#{startApplyTime} ]]>
+            </if>
+            <if test="endApplyTime!=null">
+                AND <![CDATA[ ow.apply_time<=#{endApplyTime} ]]>
+            </if>
+        </where>
+    </sql>
+
+</mapper>

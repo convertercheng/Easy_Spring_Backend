@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.ParklotParamsMapper">
+
+
+    <select id="queryParklotParams" resultType="com.qhieco.commonentity.relational.ParklotParamsB">
+         SELECT t1.`id`,t1.`qhvalue`,t1.`qhkey`,t1.`name` FROM b_parklot_params t1
+         WHERE t1.`parklot_id`=#{parklotId} AND t1.`state`=#{state} AND t1.`group_name`=#{groupName}
+         ORDER BY t1.`sequence` DESC
+    </select>
+
+
+    <select id="findOperatorById" resultType="com.qhieco.commonentity.Operator">
+        SELECT t1.`id`,t1.`name`,t1.`phone` FROM t_operator t1
+        WHERE t1.id=#{id} and t1.state=#{state}
+    </select>
+</mapper>

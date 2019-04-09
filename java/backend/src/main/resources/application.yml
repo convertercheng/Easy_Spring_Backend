@@ -1,0 +1,12 @@
+# 基本配置
+spring:
+  profiles :
+    active : loc     #如何选择配置文件，loc是Aplication-loc，以此类推
+    # 上传文件大小配置
+  http:
+    multipart:
+      max-file-size : 100Mb   #文件上传大小
+      max-request-size : 200Mb  #最大请求大小
+server:
+  session:
+    timeout: 3600

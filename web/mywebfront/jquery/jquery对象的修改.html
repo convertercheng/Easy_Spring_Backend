@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>demo</title>
+	<style >
+		.box{ width: 100px;height: 100px;}
+		.red{background-color: red;}
+		.b10{border:10px solid #000;}
+		.m10{margin:10px;}
+		.p10{padding:10px;}
+		.hide{display: none;}
+	</style>
+</head>
+<body>
+	<div class="box" id="demo">div</div>
+	<ul>
+		<li>item</li>
+		<li>item</li>
+		<li>item</li>
+		<li>item</li>
+		<li>item</li>
+		<li>item</li>
+		<li>item</li>
+	</ul> 
+	<script src="../platform/js/jquery-1.7.1.min.js"></script>
+	<script >
+		$(function () {
+			// body...
+			var element = $('#demo');
+			element.css('width',200);
+			element.css({
+				'background-color': 'red',
+				height:200,
+				border:'10px solid #000',
+				marginTop:100,
+				width: '-=100'
+			});
+
+
+			// if(element.hasClass('hide')){
+			// 	element.removeClass('hide');
+			// }
+			// else{
+			// 	element.addClass('hide');
+			// }
+
+			$('li').each(function (index) {
+				$(this).toggleClass('red',index%3===0);
+				// body...
+			}) 
+			// element.addClass(' red');
+			// element.addClass('red b10 m10 p10');
+			element.addClass(function (index,className) {
+				console.log(index);
+				console.log(className);
+				return 'red';
+				// body...
+			})
+			// element.removeClass('red');
+		})
+	</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.LockMapper">
+<select id="queryIdbyParklocId" resultType="com.qhieco.response.data.api.LockTypeData">
+        SELECT tl.`id` lockId, tl.`type` lockType FROM t_lock tl WHERE tl.`parkloc_id`=#{parklocId} AND tl.`state`=1 LIMIT 1
+    </select>
+<select id="queryLockInfoByParklocId" resultType="java.util.HashMap">
+        SELECT tl.id lockId, tl.bt_name btName, tl.bt_password btPwd, tl.`type` lockType  from t_lock tl
+             INNER JOIN t_order_parking top ON top.parkloc_id=tl.parkloc_id
+              WHERE top.id=#{orderId} AND tl.state=#{valid} LIMIT 1;
+    </select>
+
+    <select id="queryParklocLockListByUserId" resultMap="lockMap">
+        SELECT tl.id lockId, tpc.id parklocId, tpt.id parklotId, tpt.`name` parklotName, tpc.number parklocNumber,tl.bt_name btName, tl.type type,
+        tl.bt_password btPwd,ts.id shareId, ts.start_time startTime, ts.end_time endTime from  t_parkloc tpc
+        LEFT JOIN t_lock tl ON tpc.id=tl.parkloc_id LEFT JOIN t_parklot tpt ON tpt.id=tpc.parklot_id LEFT JOIN t_share ts ON tpc.id=ts.parkloc_id
+        AND ts.state=1 WHERE tl.state=1 AND tpc.mobile_user_id=#{userId}
+        ORDER BY tpt.`name` ASC,tpc.number ASC;
+    </select>
+    
+    <resultMap id="lockMap" type="com.qhieco.response.data.api.ParklocLockRespData">
+        <id column="lockId" property="lockId" />
+        <result column="parklocId" property="parklocId" />
+        <result column="parklotId" property="parklotId" />
+        <result column="parklotName" property="parklotName" />
+        <result column="parklocNumber" property="parklocNumber" />
+        <result column="btName" property="btName" />
+        <result column="btPwd" property="btPwd" />
+        <result column="type" property="type"/>
+        <collection ofType="com.qhieco.response.data.api.ShareInfo" property="shareList">
+            <id column="shareId" property="shareId" />
+            <result column="startTime" property="startTime" />
+            <result column="endTime" property="endTime" />
+        </collection>
+    </resultMap>
+
+    </mapper>

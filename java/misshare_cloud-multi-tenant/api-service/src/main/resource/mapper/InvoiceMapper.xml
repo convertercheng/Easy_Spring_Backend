@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.InvoiceMapper">
+<select id="queryInvoiceDetailById" resultType="com.qhieco.response.data.api.InvoiceDetailRepData">
+        SELECT tai.id invoiceId,
+            tai.complete_time completeTime,
+            tai.state,
+            tai.email,
+            tai.title,
+            tai.taxpayer_id taxpayerId,
+            tai.type,
+            tai.fee,
+            tai.content,
+            tai.apply_time applyTime,
+            tf.path filePath
+        FROM
+            t_apply_invoice tai
+        LEFT JOIN t_file tf ON tf.id = tai.file_id
+        WHERE
+            tai.id = #{invoiceId};
+    </select>
+
+    <select id="queryInvoiceLastWriteInfoByUserId" resultType="com.qhieco.response.data.api.InvoiceLastWriteRepData">
+        SELECT type,
+            title,
+            taxpayer_id taxpayerId,
+            email
+        FROM
+            t_apply_invoice
+        WHERE
+            mobile_user_id = #{userId}
+        ORDER BY
+            apply_time DESC
+        LIMIT 1;
+    </select>
+<select id="queryInvoiceRecordListByUserId" resultType="com.qhieco.response.data.api.InvoiceRepData">
+      SELECT id invoiceId, fee fee, complete_time completeTime, state state from t_apply_invoice
+       WHERE mobile_user_id=#{userId} AND state IN (1701, 1703)  ORDER BY complete_time desc LIMIT #{startPage}, #{pageSize}
+    </select>
+
+    </mapper>

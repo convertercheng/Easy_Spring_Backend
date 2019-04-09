@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.OrderRefundMapper">
+    <select id="orderCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.OrderRefundRequest">
+        SELECT count(od.id) FROM
+        <include refid="tableList"/>
+        <include refid="orderRefundWhere"/>
+    </select>
+
+    <select id="orderPage" resultType="com.qhieco.response.data.web.OrderRefundData"
+            parameterType="com.qhieco.request.web.OrderRefundRequest">
+        SELECT
+        <include refid="resultFields"/>
+        FROM
+        <include refid="tableList"/>
+        <include refid="orderRefundWhere"/>
+        ORDER BY od.id DESC
+        LIMIT #{start},#{length}
+    </select>
+    <select id="orderRefundExcel" resultType="com.qhieco.response.data.web.OrderRefundData"
+            parameterType="com.qhieco.request.web.OrderRefundRequest">
+        SELECT
+        <include refid="resultFields"/>
+        FROM
+        <include refid="tableList"/>
+        <include refid="orderRefundWhere"/>
+        ORDER BY od.id DESC
+    </select>
+    <sql id="resultFields">
+        od.id,
+        um.phone,
+        od.trade_no tradeNo,
+        od.fee,
+        od.channel,
+        od.state,
+        od.create_time createTime
+    </sql>
+    <sql id="tableList">
+        t_order_refund od
+        LEFT JOIN t_order_parking op ON od.order_parking_id = op.id
+        LEFT JOIN t_user_mobile um on um.id = op.mobile_user_id
+    </sql>
+    <sql id="orderRefundWhere">
+       <where>
+        <if test="phone != null and phone !=''">
+            um.phone like concat(concat('%',#{phone}),'%')
+        </if>
+        <if test="feeMin!=null">
+            AND <![CDATA[ od.fee>=#{feeMin} ]]>
+        </if>
+        <if test="feeMax!=null">
+            AND <![CDATA[ od.fee<=#{feeMax} ]]>
+        </if>
+        <if test="tradeNo!=null and tradeNo !=''">
+            AND od.trade_no like concat(concat('%',#{tradeNo}),'%')
+        </if>
+        <if test="state != null">
+            AND od.state = #{state}
+        </if>
+        <if test="channel != null and channel.size > 0">
+               AND od.channel IN
+               <foreach collection="channel" index="index" item="channelId" open="(" close=")" separator=",">
+                   #{channelId}
+               </foreach>
+        </if>
+        <if test="startCreateTime!=null">
+            AND <![CDATA[ od.create_time>=#{startCreateTime} ]]>
+        </if>
+        <if test="endCreateTime!=null">
+            AND <![CDATA[ od.create_time<=#{endCreateTime} ]]>
+        </if>
+       </where>
+    </sql>
+</mapper>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ParklocMapper">
+<select id="findValidPublishList" resultType="com.qhieco.commonentity.Publish">
+        SELECT id as id,parkloc_id as parklocId,start_time as startTime,end_time as endTime,time_range_format as timeRange,mode as mode,day_of_week as dayOfWeek,
+        last_start_time as lastStartTime,last_end_time as lastEndTime,last_time_range_format as lastTimeRange,last_mode as lastMode,last_day_of_week as lastDayOfWeek ,state as state
+        FROM t_publish
+        WHERE parkloc_id = #{parklocId}
+        AND state = 1
+        AND (mode = 1 OR ( mode = 0 AND UNIX_TIMESTAMP(NOW()) * 1000 &lt; end_time))
+    </select>
+
+<select id="queryPublishedParklocsByUserId" resultType="com.qhieco.response.data.api.PublishParklocRespData">
+         SELECT tpt.`name` parklotName,tpt.id parklotId, tpc.number parklocNumber, tpc.id parklocId, tpc.state state FROM
+        t_parkloc tpc
+        INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+        WHERE tpc.mobile_user_id=#{userId}
+        AND tpc.state!=1100
+        AND tpc.`id` IN(SELECT tp.parkloc_id parklocId FROM t_publish tp WHERE
+          (tp.`mode`=0 AND tp.`end_time`&gt;=UNIX_TIMESTAMP(NOW())*1000 AND tp.`parkloc_id`=tpc.`id`) OR tp.`mode`=1 AND tp.`state` != 0)
+        ORDER BY tpt.`name` ASC , tpc.number ASC
+        LIMIT #{startPage}, #{pageSize};
+
+    </select>
+
+    <select id="queryParklocListByUserIdAndParklocNum" resultType="com.qhieco.response.data.api.ParklocLockRespData">
+        SELECT tpc.number as parklocNumber,tpc.id as parklocId,tl.id as lockId ,tl.bt_name as btName , tl.bt_password as btPwd ,tl.type as type from
+        t_parkloc tpc
+        INNER JOIN t_lock tl ON tpc.id=tl.parkloc_id
+        WHERE tpc.mobile_user_id=#{userId} AND tpc.state = #{unpublished}
+        <if test="parklocNum != null and parklocNum != ''">
+            AND tpc.number like concat(concat('%',#{parklocNum}),'%')
+        </if>
+        ORDER BY tpc.number ASC
+        LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    <select id="queryParklocPublishInfoByNumber" resultMap="parklocPublishMap">
+        SELECT tpc.id parklocId, tpc.number parklocNumber, tpc.parklot_id parklotId, tp.start_time startTime,tp.id publishId,
+                tp.end_time endTime, tp.`mode` `mode`,  tp.day_of_week `dayOfWeek`,tp.state publishState, ' ' parklotName,
+            tpc.state state
+         FROM t_publish tp INNER JOIN t_parkloc tpc ON tp.parkloc_id=tpc.id
+          AND tpc.`mobile_user_id`=#{userId}
+         AND tp.state != #{invalid} AND tpc.number=#{parklocNumber};
+    </select>
+
+    <resultMap id="parklocPublishMap" type="com.qhieco.response.data.api.PublishParklocRespData">
+        <result column="parklocId" property="parklocId" />
+        <result column="parklocNumber" property="parklocNumber" />
+        <result column="parklotId" property="parklotId" />
+        <result column="state" property="state" />
+        <result column="parklotName" property="parklotName" />
+        <collection ofType="com.qhieco.response.data.api.PublishRespData" property="publishList">
+            <result column="publishId" property="publishId" />
+            <result column="startTime" property="startTime" />
+            <result column="endTime" property="endTime" />
+            <result column="mode" property="mode" />
+            <result column="dayOfWeek" property="dayOfWeek" />
+            <result column="publishState" property="state" />
+        </collection>
+    </resultMap>
+
+    <select id="queryTimeoutShareList" resultType="com.qhieco.time.ParklocShare">
+        
+
+          SELECT DISTINCT ts.id shareId, ts.`parkloc_id` parklocId, FROM_UNIXTIME(ts.`end_time`/1000) endTime FROM t_share ts
+            LEFT JOIN t_reservation trv ON trv.`share_id`=ts.`id`
+            LEFT JOIN t_order_parking top ON top.`reservation_id`=trv.`id`
+            AND  top.`state` NOT IN (#{sysCanceled},#{timeout},#{userCanceled},#{custServiceCanceled})
+            WHERE  ts.`end_time`&lt;=UNIX_TIMESTAMP(NOW())*1000 AND ts.`state`&lt;&gt;#{invalid}
+
+        
+    </select>
+
+
+    <select id="queryPublishListByParklocIdAdState" resultType="com.qhieco.response.data.api.PublishRespData">
+        SELECT tp.id publishId, tp.`mode` mode, tp.start_time startTime, tp.end_time endTime,
+            tp.day_of_week dayOfWeek,tp.state state  from t_publish tp WHERE tp.parkloc_id=#{parklocId} AND tp.state IN (#{valid}, #{tobecancelled}, #{tobealter})
+             ORDER BY tp.start_time ASC
+    </select>
+
+    <select id="queryParklocPublishInfoByTime" resultType="com.qhieco.response.data.api.ParklocPublishInfoRespData">
+     SELECT tpc.id parklocId, tpc.number parklocNumber, tpc.parklot_id parklotId, tp.start_time startTime,
+             tp.end_time endTime, tp.`mode` MODE, tp.day_of_week DAYOFWEEK, tp.id publishId,
+            IF(tp.state =#{tobecancelled} OR tp.state=#{tobealter}, tp.state, tpc.state) state
+         FROM t_publish tp INNER JOIN t_parkloc tpc ON tp.parkloc_id=tpc.id WHERE tpc.`mobile_user_id`=#{userId}
+         AND tp.state != #{invalid}
+            AND ((tp.start_time=#{startTime} AND tp.end_time=#{endTime} AND tp.`mode`=#{onceMode})
+                        OR (FROM_UNIXTIME(tp.start_time/1000, '%H%i')=FROM_UNIXTIME(#{startTime}/1000, '%H%i')
+                        AND FROM_UNIXTIME(tp.end_time/1000, '%H%i') =  FROM_UNIXTIME(#{endTime}/1000, '%H%i')
+                         AND tp.`mode`=#{loopMode}))
+            ORDER BY tpc.number ASC LIMIT #{startPage},#{pageSize};
+    </select>
+
+
+    <select id="queryAllParklocListByUserIdAdState" resultType="com.qhieco.response.data.api.PublishParklocRespData">
+        SELECT tpt.`name` parklotName,tpt.id parklotId, tpc.number parklocNumber, tpc.id parklocId,tpc.state state from
+        t_parkloc tpc
+        INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+        WHERE tpc.mobile_user_id=#{userId} AND tpc.state NOT IN (0, 9999)
+        ORDER BY tpt.`name` ASC , tpc.number ASC
+        LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    </mapper>

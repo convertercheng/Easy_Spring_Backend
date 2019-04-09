@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ParklotMapper">
+<select id="queryParklotListByKeywords" parameterType="java.util.HashMap" resultType="com.qhieco.response.data.api.ParklotQueryRepData">
+        SELECT id, name, address,type,
+        ACOS( SIN(#{y} * PI() / 180) * SIN(lat * PI() / 180) + COS(#{y} * PI() / 180) * COS(lat * PI() / 180) * COS( #{x} * PI() / 180 - lng * PI() / 180  ) ) * 6378.14 as juli
+        FROM t_parklot
+        where state=1
+        and name like concat('%', #{keywords}, '%')
+        ORDER BY juli ASC
+        <if test="startPage != null and pageSize != 0">
+            LIMIT #{startPage}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="queryParklotParkingFeeRule" resultType="java.lang.String">
+        SELECT tfrp.first_hour_fee
+        FROM b_parklot_fee_rule_parking bpfrp INNER JOIN t_fee_rule_parking tfrp on tfrp.id = bpfrp.fee_rule_id
+        WHERE bpfrp.parklot_id = #{parklot_id} AND tfrp.state = 1 AND bpfrp.state = 1
+    </select>
+    
+    <select id="queryParklotUsualByUserId" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.ParklotUsualRepData">
+        SELECT tp.`name` name, tp.id parklotId, bpu.id usualId, tp.type type
+        FROM b_parklot_usual bpu INNER JOIN t_parklot tp
+        ON tp.id = bpu.parklot_id
+        WHERE bpu.user_id=#{userId}
+        AND bpu.state = 1
+    </select>
+
+    <select id="queryParklotNearby" resultType="com.qhieco.commonentity.Parklot">
+        SELECT id, name, type, address, lat, lng, navi_lat naviLat, navi_lng naviLng, kind,
+        ACOS(SIN(#{map_lat} * PI() / 180) * SIN(lat * PI() / 180) + COS(#{map_lat} * PI() / 180) * COS(lat * PI() / 180) * COS( #{map_lng} * PI() / 180 - lng * PI() / 180  ) ) * 6378.14 * 1000 as distance,
+        ACOS(SIN(#{locate_lat} * PI() / 180) * SIN(lat * PI() / 180) + COS(#{locate_lat} * PI() / 180) * COS(lat * PI() / 180) * COS( #{locate_lng} * PI() / 180 - lng * PI() / 180  ) ) * 6378.14 * 1000 as locateDistance
+        FROM t_parklot
+        WHERE state = 1
+        HAVING distance &lt;= #{radius}
+        ORDER BY locateDistance ASC
+    </select>
+
+    <select id="queryMinPublishTimeInterval" resultType="java.lang.String">
+        SELECT qhvalue
+        FROM b_parklot_params
+        WHERE parklot_id=#{parklotId}
+        AND state=1
+        AND qhkey=#{minPublishInterval}
+        LIMIT 1
+    </select>
+
+    <select id="parklotReserveFeeRule" resultType="com.qhieco.commonentity.FeeRuleReserve">
+        SELECT tfrr.fee fee, tfrr.finish_time finishTime
+        FROM b_parklot_fee_rule_reserve bpfrr INNER JOIN t_fee_rule_reserve tfrr on tfrr.id = bpfrr.fee_rule_id
+        WHERE bpfrr.parklot_id = #{parklot_id} AND tfrr.state = 1 AND bpfrr.state = 1
+    </select>
+
+    <select id="queryParkingFeeRuleByOrderId" resultType="com.qhieco.response.data.api.ParkingFeeData">
+       SELECT tfrp.id, tfrp.first_hour_fee firstHourFee, tfrp.other_time_fee otherTimeFee, tfrp.max_fee maxFee, tfrp.free_use_time freeUseTime,
+       tfrp.over_time_fee overTimeFee, tfrp.weekday weekday from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id
+        INNER JOIN b_parklot_fee_rule_parking bpfrp ON bpfrp.parklot_id=tpc.parklot_id INNER JOIN t_fee_rule_parking tfrp ON tfrp.id=bpfrp.fee_rule_id
+        WHERE top.id=#{orderId} AND tfrp.state=#{state} AND tfrp.`weekday`=IF(FIND_IN_SET(DAYOFWEEK(NOW())-1, '0,6')&gt;0, 0, 1)
+    </select>
+
+    <select id="queryReserveInfoByCondition" resultType="com.qhieco.response.data.api.ReserveEnterRepData">
+         SELECT tpt.id parklotId, tpt.`name` parklotName, tpt.kind parklotKind, tpt.address address, tpt.fee_intro feeIntro,tpt.type type,
+        (SELECT bpp.qhvalue value from b_parklot_params bpp WHERE bpp.parklot_id=tpt.id AND bpp.state=#{valid} AND bpp.qhkey=#{freeCancellationTimeKey} LIMIT 1) AS freeCancellationTime,
+        (SELECT bpp.qhvalue value from b_parklot_params bpp WHERE bpp.parklot_id=tpt.id AND bpp.state=#{valid} AND bpp.qhkey=#{maxDelayTimeKey} LIMIT 1) AS maxDelayTime,
+
+        CASE WHEN (SELECT count(1) from t_plate tp INNER JOIN b_user_plate bup ON tp.id=bup.plate_id WHERE bup.mobile_user_id=#{userId}
+         AND bup.state=#{valid}) &gt; 1
+        THEN IF((SELECT top.reservation_id from t_order_parking top WHERE top.mobile_user_id = #{userId} AND top.state =#{reserveState}
+         ORDER BY top.pay_time DESC LIMIT 1) IS NOT NULL,
+        (SELECT tpe.number plateNo from t_order_parking top INNER JOIN t_plate tpe on top.plate_id=tpe.id WHERE top.mobile_user_id = #{userId}
+          AND top.state =#{reserveState}  AND tpe.state=#{valid} ORDER BY top.pay_time DESC LIMIT 1),
+        (SELECT tp.number plateNo from t_plate tp INNER JOIN b_user_plate bup ON tp.id=bup.plate_id WHERE bup.mobile_user_id=#{userId}
+        AND bup.state=#{valid} AND tp.state=#{valid} ORDER BY tp.create_time desc LIMIT 1))
+        ELSE (SELECT tp.number plateNo from t_plate tp INNER JOIN b_user_plate bup ON tp.id=bup.plate_id WHERE bup.mobile_user_id=#{userId}
+         AND bup.state=#{valid} AND tp.state=#{valid} ORDER BY tp.create_time desc LIMIT 1) END  AS plateNo,
+
+        CASE WHEN (SELECT count(1) from t_plate tp INNER JOIN b_user_plate bup ON tp.id=bup.plate_id WHERE bup.mobile_user_id=#{userId}
+          AND bup.state=#{valid}) &gt; 1
+        THEN IF((SELECT top.reservation_id from t_order_parking top WHERE top.mobile_user_id = #{userId} AND top.state = 1 ORDER BY
+          top.pay_time DESC LIMIT 1) IS NOT NULL,
+        (SELECT tpe.id plateId from t_order_parking top INNER JOIN t_plate tpe on top.plate_id=tpe.id WHERE top.mobile_user_id = #{userId}
+          AND top.state = #{reserveState}  AND tpe.state=#{valid} ORDER BY top.pay_time DESC LIMIT 1),
+        (SELECT tp.id plateId from t_plate tp INNER JOIN b_user_plate bup ON tp.id=bup.plate_id WHERE bup.mobile_user_id=#{userId}
+          AND bup.state=#{valid} AND tp.state=#{valid} ORDER BY tp.create_time desc LIMIT 1))
+        ELSE (SELECT tp.id plateId from t_plate tp INNER JOIN b_user_plate bup ON tp.id=bup.plate_id WHERE bup.mobile_user_id=#{userId}
+          AND bup.state=#{valid} AND tp.state=#{valid} ORDER BY tp.create_time desc LIMIT 1) END  AS plateId
+
+        from t_parklot tpt WHERE tpt.id=#{parklotId};
+    </select>
+
+    <select id="queryParklotReserveFeeRule" resultType="java.lang.String">
+        SELECT tfrr.fee
+        FROM b_parklot_fee_rule_reserve bpfrr INNER JOIN t_fee_rule_reserve tfrr ON tfrr.id = bpfrr.fee_rule_id
+        WHERE bpfrr.parklot_id = #{parklot_id} AND tfrr.state = 1 AND bpfrr.state = 1
+    </select>
+
+    <select id="parklotParkingFeeRule" resultType="com.qhieco.commonentity.FeeRuleParking">
+        SELECT tfrp.id id, tfrp.first_hour_fee firstHourFee, tfrp.other_time_fee otherTimeFee, tfrp.max_fee maxFee, tfrp.free_use_time freeUseTime,
+        tfrp.over_time_fee overTimeFee, tfrp.weekday weekday
+        FROM b_parklot_fee_rule_parking bpfrp INNER JOIN t_fee_rule_parking tfrp on tfrp.id = bpfrp.fee_rule_id
+        WHERE bpfrp.parklot_id = #{parklot_id} AND tfrp.state = 1 AND bpfrp.state = 1
+    </select>
+
+    <select id="queryLogLockByParklocId" resultType="com.qhieco.commonentity.LogLock">
+        select ll.rocker_state as rockerState,ll.battery as battery,ll.create_time as createTime from t_log_lock ll  LEFT JOIN t_lock l on ll.lock_id = l.id LEFT JOIN t_parkloc pl on l.parkloc_id = pl.id where pl.id=#{parklocId}
+         order by ll.create_time desc  LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.AdverMapper">
+    <select id="queryByPhoneType" resultType="com.qhieco.response.data.web.AdvertData">
+        SELECT ta.id id, ta.file_id fileId, ta.countdown countdown, ta.create_time createTime, ta.href href, ta.jumpable jumpable,
+         ta.phone_type phoneType, ta.state state, tf.`name` name, tf.path filePath
+        from t_advert ta LEFT JOIN t_file tf ON tf.id=ta.file_id WHERE ta.phone_type=#{phoneType}  and ta.state=1
+        ORDER BY ta.id DESC
+    </select>
+</mapper>

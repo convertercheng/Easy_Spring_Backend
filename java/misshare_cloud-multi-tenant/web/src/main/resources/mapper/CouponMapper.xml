@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.CouponMapper">
+
+    <resultMap id="couponCountMap" type="com.qhieco.response.data.web.CouponCountData">
+
+            <result column="createTime" property="createTime"/>
+            <collection property="couponCounListData"
+                        ofType="com.qhieco.response.data.web.CouponCounListData">
+                <result column="couponLimit" property="couponLimit"></result>
+                <result column="usedMoney" property="usedMoney"></result>
+                <result column="couponType" property="couponType"></result>
+            </collection>
+
+    </resultMap>
+
+    <select id="pageCoupon" resultType="com.qhieco.response.data.web.CouponData"
+            parameterType="com.qhieco.request.web.CouponRequest">
+        SELECT * FROM(SELECT t1.`id`,t1.`coupon_code` couponCode,
+        t1.`coupon_password` couponPassword,t1.`begin_time` beginTime,t1.`end_time` endTime,
+        t1.`coupon_type` couponType,t1.`used_money` usedMoney,t1.`create_time` createTime,
+        (SELECT t_user_mobile.`phone` FROM t_user_mobile WHERE t_user_mobile.`id`=t1.`mobile_user_id`) userPhone,
+        t1.`coupon_limit` couponLimit,t1.`used_time` usedTime,t1.`state`
+        FROM t_coupon t1) t3
+        <include refid="pageCouponWhere"/>
+        LIMIT #{start},#{length}
+    </select>
+
+    <select id="pageCouponTotalCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.CouponRequest">
+        SELECT COUNT(*) FROM(SELECT t1.`id`,t1.`coupon_code` couponCode,
+        t1.`coupon_password` couponPassword,t1.`begin_time` beginTime,t1.`end_time` endTime,
+        t1.`coupon_type` couponType,t1.`used_money` usedMoney,t1.`create_time` createTime,
+        (SELECT t_user_mobile.`phone` FROM t_user_mobile WHERE t_user_mobile.`id`=t1.`mobile_user_id`) userPhone,
+        t1.`coupon_limit` couponLimit,t1.`used_time` usedTime,t1.`state`
+        FROM t_coupon t1) t3
+        <include refid="pageCouponWhere"/>
+    </select>
+
+    <select id="execlCoupon" resultType="com.qhieco.response.data.web.CouponData"
+            parameterType="com.qhieco.request.web.CouponRequest">
+        SELECT * FROM(SELECT t1.`id`,t1.`coupon_code` couponCode,
+        t1.`coupon_password` couponPassword,t1.`begin_time` beginTime,t1.`end_time` endTime,
+        t1.`coupon_type` couponType,t1.`used_money` usedMoney,t1.`create_time` createTime,
+        (SELECT t_user_mobile.`phone` FROM t_user_mobile WHERE t_user_mobile.`id`=t1.`mobile_user_id`) userPhone,
+        t1.`coupon_limit` couponLimit,t1.`used_time` usedTime,t1.`state`
+        FROM t_coupon t1) t3
+        <include refid="pageCouponWhere"/>
+    </select>
+
+    <sql id="pageCouponWhere">
+        <where>
+            1=1
+            <if test="couponCode!=null and couponCode!=''">
+                AND t3.couponCode  LIKE  concat(concat('%',#{couponCode}),'%')
+            </if>
+            <if test="minCouponLimit!=null">
+                <![CDATA[AND t3.couponLimit>=#{minCouponLimit} ]]>
+            </if>
+            <if test="maxCouponLimit!=null">
+                <![CDATA[AND t3.couponLimit<=#{maxCouponLimit} ]]>
+            </if>
+            <if test="userPhone!=null and userPhone!=''">
+                AND t3.userPhone  LIKE  concat(concat('%',#{userPhone}),'%')
+            </if>
+            <if test="minUsedMoney!=null">
+                <![CDATA[AND t3.usedMoney>=#{minUsedMoney} ]]>
+            </if>
+            <if test="maxUsedMoney!=null">
+                <![CDATA[AND t3.usedMoney>=#{maxUsedMoney} ]]>
+            </if>
+            <if test="state!=null">
+                <![CDATA[AND t3.state=#{state} ]]>
+            </if>
+            <if test="startCreateTime!=null and startCreateTime!='' and endCreateTime!=null and endCreateTime!=''">
+                <![CDATA[AND t3.createTime BETWEEN  #{startCreateTime} AND  #{endCreateTime}]]>
+            </if>
+            <if test="startUsedTime!=null and startUsedTime!='' and endUsedTime!=null and endUsedTime!=''">
+                <![CDATA[AND t3.usedTime BETWEEN  #{startUsedTime} AND  #{endUsedTime}]]>
+            </if>
+            <if test="beginTime!=null and beginTime!=''">
+                <![CDATA[AND t3.beginTime>= beginTime]]>
+            </if>
+            <if test="endTime!=null and endTime!=''">
+                <![CDATA[AND t3.endTime<= endTime]]>
+            </if>
+        </where>
+
+    </sql>
+
+
+    <select id="getCouponDayReport" resultMap="couponCountMap" parameterType="com.qhieco.request.web.CouponRequest">
+        SELECT t1.`coupon_type` couponType,t1.`create_time` createTime,SUM(t1.`coupon_limit`)
+        couponLimit,SUM(t1.`used_money`) usedMoney
+        FROM `t_coupon` t1 WHERE FROM_UNIXTIME(t1.`create_time`/1000, '%Y-%m-%d')
+        <![CDATA[<]]>DATE_FORMAT(NOW(),'%Y-%m-%d')
+        <if test="startCreateTime!='' and startCreateTime!=null ">
+            and t1.`create_time`>#{startCreateTime}
+        </if>
+        <if test="endCreateTime!='' and endCreateTime!=null ">
+            and t1.`create_time`<![CDATA[<]]>#{endCreateTime}
+        </if>
+        GROUP BY FROM_UNIXTIME( t1.`create_time`/1000,'%Y-%m-%d'), t1.`coupon_type`
+        ORDER BY FROM_UNIXTIME( t1.`create_time`/1000,'%Y-%m-%d') ASC
+    </select>
+
+
+    <select id="getTagByUserId"  resultType="com.qhieco.commonentity.Tag" parameterType="java.util.List">
+
+          SELECT t1.id,t1.name,t1.comment,t1.create_time createTime,t1.modify_time modifyTime,t1.user_type userType,t1.start_signup_time
+        startSignupTime,t1.end_signup_time endSignupTime,t1.order_number orderNumber,t1.order_amount orderAmount
+         ,t1.unsignin_days unsigninDays,t1.state, t1.`type` `type`  FROM t_tag t1
+          WHERE  1=1
+            <if test="list!=null and list.size()>0">
+                AND t1.id IN
+                <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+    </select>
+</mapper>

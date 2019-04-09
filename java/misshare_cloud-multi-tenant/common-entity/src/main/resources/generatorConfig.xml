@@ -1,0 +1,448 @@
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<!DOCTYPE generatorConfiguration-->
+        <!--PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"-->
+        <!--"http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">-->
+
+<!--<generatorConfiguration>-->
+
+    <!--<properties resource="application.properties" />-->
+
+    <!--<classPathEntry location="${jdbc.location}" />-->
+
+    <!--<context id="Tables" targetRuntime="MyBatis3">-->
+
+        <!--&lt;!&ndash; 注释 &ndash;&gt;-->
+        <!--<commentGenerator>-->
+            <!--&lt;!&ndash; 是否生成注释代时间戳 &ndash;&gt;-->
+            <!--<property name="suppressDate" value="true"/>-->
+            <!--&lt;!&ndash; 是否去除自动生成的注释 true：是 ： false:否 &ndash;&gt;-->
+            <!--<property name="suppressAllComments" value="true"/>-->
+        <!--</commentGenerator>-->
+
+        <!--&lt;!&ndash; JDBC连接 &ndash;&gt;-->
+        <!--<jdbcConnection-->
+                <!--driverClass="${spring.datasource.driver-class-name}"-->
+                <!--connectionURL="${spring.datasource.url}"-->
+                <!--userId="${spring.datasource.username}"-->
+                <!--password="${spring.datasource.password}">-->
+        <!--</jdbcConnection>-->
+
+        <!--&lt;!&ndash; 非必需，类型处理器，在数据库类型和java类型之间的转换控制&ndash;&gt;-->
+        <!--&lt;!&ndash; 默认false，把JDBC DECIMAL 和 NUMERIC 类型解析为 Integer，为 true时把JDBC DECIMAL 和-->
+         <!--NUMERIC 类型解析为java.math.BigDecimal &ndash;&gt;-->
+        <!--<javaTypeResolver>-->
+            <!--&lt;!&ndash; 是否使用bigDecimal， false可自动转化以下类型（Long, Integer, Short, etc.） &ndash;&gt;-->
+            <!--<property name="forceBigDecimals" value="false" />-->
+        <!--</javaTypeResolver>-->
+
+        <!--&lt;!&ndash; 生成实体类地址 &ndash;&gt;-->
+        <!--<javaModelGenerator targetPackage="com.example.myproject.model" targetProject="src/main/java">-->
+            <!--&lt;!&ndash; 从数据库返回的值被清理前后的空格 &ndash;&gt;-->
+            <!--<property name="trimStrings" value="true" />-->
+            <!--&lt;!&ndash; enableSubPackages:是否让schema作为包的后缀 &ndash;&gt;-->
+            <!--<property name="enableSubPackages" value="false" />-->
+        <!--</javaModelGenerator>-->
+
+        <!--&lt;!&ndash; 生成mapper xml文件 &ndash;&gt;-->
+        <!--<sqlMapGenerator targetPackage="mapper"  targetProject="src/main/resources">-->
+            <!--&lt;!&ndash; enableSubPackages:是否让schema作为包的后缀 &ndash;&gt;-->
+            <!--<property name="enableSubPackages" value="false" />-->
+        <!--</sqlMapGenerator>-->
+
+        <!--&lt;!&ndash; 生成mapper xml对应Client&ndash;&gt;-->
+        <!--<javaClientGenerator targetPackage="com.example.myproject.mapper" targetProject="src/main/java" type="XMLMAPPER">-->
+            <!--&lt;!&ndash; enableSubPackages:是否让schema作为包的后缀 &ndash;&gt;-->
+            <!--<property name="enableSubPackages" value="false" />-->
+        <!--</javaClientGenerator>-->
+
+        <!--&lt;!&ndash; 配置表信息 &ndash;&gt;-->
+        <!--&lt;!&ndash; schema即为数据库名 tableName为对应的数据库表 domainObjectName是要生成的实体类 enable*ByExample-->
+            <!--是否生成 example类 &ndash;&gt;-->
+
+
+        <!--<table schema="misshare" tableName="b_coupon_order_parking"-->
+               <!--domainObjectName="CouponOrderParkingB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_coupon_order_topup"-->
+               <!--domainObjectName="CouponOrderTopupB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_feature_permission"-->
+               <!--domainObjectName="FeaturePermissionB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_feedback_problem"-->
+               <!--domainObjectName="FeedbackProblemB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_parkloc_access"-->
+               <!--domainObjectName="ParklocAccessB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_parkloc_lock"-->
+               <!--domainObjectName="ParklocLockB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_parklot_admin"-->
+               <!--domainObjectName="ParklotAdminB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_parklot_fee_rule"-->
+               <!--domainObjectName="ParklotFeeRuleReserveB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_parklot_file"-->
+               <!--domainObjectName="ParklotFileB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_parklot_params"-->
+               <!--domainObjectName="ParklotParamsB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_role_feature"-->
+               <!--domainObjectName="RoleFeatureB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_user_plate"-->
+               <!--domainObjectName="UserPlateB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_user_role"-->
+               <!--domainObjectName="UserRoleB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="b_user_tag"-->
+               <!--domainObjectName="UserTagB" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_access"-->
+               <!--domainObjectName="Access" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_apply_invoice"-->
+               <!--domainObjectName="ApplyInvoice" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_apply_parkloc"-->
+               <!--domainObjectName="ApplyParkloc" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_area"-->
+               <!--domainObjectName="Area" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_balance_parklot"-->
+               <!--domainObjectName="BalanceParklot" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_balance_user"-->
+               <!--domainObjectName="BalanceUser" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_bank_card"-->
+               <!--domainObjectName="BankCard" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_barrier"-->
+               <!--domainObjectName="Barrier" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_coupon"-->
+               <!--domainObjectName="Coupon" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_coupon_template"-->
+               <!--domainObjectName="CouponTemplate" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_feature"-->
+               <!--domainObjectName="Feature" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_fee_rule"-->
+               <!--domainObjectName="FeeRuleType" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_feedback"-->
+               <!--domainObjectName="Feedback" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_file"-->
+               <!--domainObjectName="File" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_gateway"-->
+               <!--domainObjectName="Gateway" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_lock"-->
+               <!--domainObjectName="Lock" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_log_barrier"-->
+               <!--domainObjectName="LogBarrier" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_log_lock"-->
+               <!--domainObjectName="LogLock" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_log_operation_mobile"-->
+               <!--domainObjectName="LogOperationMobile" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_log_operation_web"-->
+               <!--domainObjectName="LogOperationWeb" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_message"-->
+               <!--domainObjectName="Message" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_operator"-->
+               <!--domainObjectName="Operator" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_order_parking"-->
+               <!--domainObjectName="OrderParking" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_order_refund"-->
+               <!--domainObjectName="OrderRefund" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_order_refund_total"-->
+               <!--domainObjectName="OrderRefundTotal" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_order_topup"-->
+               <!--domainObjectName="OrderTopup" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_order_total"-->
+               <!--domainObjectName="OrderTotal" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_order_withdraw"-->
+               <!--domainObjectName="OrderWithdraw" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_params"-->
+               <!--domainObjectName="Params" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_parkloc"-->
+               <!--domainObjectName="Parkloc" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_parklot"-->
+               <!--domainObjectName="Parklot" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_parklot_amount"-->
+               <!--domainObjectName="ParklotAmount" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_permission"-->
+               <!--domainObjectName="Permission" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_plate"-->
+               <!--domainObjectName="Plate" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_problem"-->
+               <!--domainObjectName="Problem" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_publish"-->
+               <!--domainObjectName="Publish" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_rank_parklot"-->
+               <!--domainObjectName="RankParklot" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_rank_user"-->
+               <!--domainObjectName="RankUser" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_relaymeter"-->
+               <!--domainObjectName="Relaymeter" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_reservation"-->
+               <!--domainObjectName="Reservation" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_role"-->
+               <!--domainObjectName="Role" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_share"-->
+               <!--domainObjectName="Share" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_tag"-->
+               <!--domainObjectName="Tag" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_update"-->
+               <!--domainObjectName="Update" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_user_extra_info"-->
+               <!--domainObjectName="UserExtraInfo" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_user_mobile"-->
+               <!--domainObjectName="UserMobile" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--<table schema="misshare" tableName="t_user_web"-->
+               <!--domainObjectName="UserWeb" enableCountByExample="false"-->
+               <!--enableDeleteByExample="false" enableSelectByExample="false"-->
+               <!--enableUpdateByExample="false">-->
+        <!--</table>-->
+
+        <!--&lt;!&ndash;<table schema="blog" tableName="article"&ndash;&gt;-->
+        <!--&lt;!&ndash;domainObjectName="Article" enableCountByExample="false"&ndash;&gt;-->
+        <!--&lt;!&ndash;enableDeleteByExample="false" enableSelectByExample="false"&ndash;&gt;-->
+        <!--&lt;!&ndash;enableUpdateByExample="false">&ndash;&gt;-->
+        <!--&lt;!&ndash;</table>&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<table schema="blog" tableName="document"&ndash;&gt;-->
+        <!--&lt;!&ndash;domainObjectName="Document" enableCountByExample="false"&ndash;&gt;-->
+        <!--&lt;!&ndash;enableDeleteByExample="false" enableSelectByExample="false"&ndash;&gt;-->
+        <!--&lt;!&ndash;enableUpdateByExample="false">&ndash;&gt;-->
+        <!--&lt;!&ndash;</table>&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<table schema="blog" tableName="tag"&ndash;&gt;-->
+        <!--&lt;!&ndash;domainObjectName="Tag" enableCountByExample="false"&ndash;&gt;-->
+        <!--&lt;!&ndash;enableDeleteByExample="false" enableSelectByExample="false"&ndash;&gt;-->
+        <!--&lt;!&ndash;enableUpdateByExample="false">&ndash;&gt;-->
+        <!--&lt;!&ndash;</table>&ndash;&gt;-->
+
+    <!--</context>-->
+<!--</generatorConfiguration>-->

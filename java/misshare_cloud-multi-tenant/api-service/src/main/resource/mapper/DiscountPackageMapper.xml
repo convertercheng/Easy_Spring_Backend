@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.DiscountPackageMapper">
+<select id="getDiscountPackageInfo" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.DiscountPackageData">
+        SELECT  dp.`id`,
+        dp.`name` packageName,
+        dp.state,
+        dp.toplimit,
+        FROM t_discount_package dp
+        INNER JOIN b_parklot_package bp ON bp.`package_id`=dp.`id`
+        WHERE bp.`parklot_id`=#{id}
+        ORDER BY dp.create_time DESC
+        limit 1
+    </select>
+<select id="findPackageByParklotName" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT t.`name` parklotName FROM b_parklot_package bp
+        INNER JOIN t_parklot t ON bp.`parklot_id`=t.`id`
+        WHERE bp.`package_id`=#{id}
+    </select>
+    
+    <select id="findUserPackage" parameterType="com.qhieco.request.api.UserPackageRequest" resultType="com.qhieco.response.data.api.UserPackageData">
+         SELECT t.`id` id,t.`mobile_user_id` mobileUserId,
+         t.`package_id` packageId,t.`parklot_id` parklotId,t.`real_start_time`,
+         t.`real_end_time`,t.`state`,t.`create_time`,t.`plate_id` plateId FROM t_user_package t WHERE t.`plate_id`=#{plateId}
+         AND  t.`parklot_id`=#{parklotId} AND t.state=#{state} AND  t.`package_id`=#{packageId}
+         LIMIT 1
+    </select>
+
+
+    <select id="findRuleTimeList" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.DiscountRuleTimeData">
+        SELECT rt.id,rt.state, rt.type, rt.begin_time AS beginTime, rt.end_time AS endTime
+        FROM t_rule_time rt
+        WHERE 1=1
+        AND rt.state = 1
+        AND rt.discount_package_id=#{id}
+    </select>
+
+    <select id="findParklotPackageByParkId" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.DiscountPackageData">
+        SELECT dp.id,
+            dp.name,
+            dp.effective_daytime AS effectiveDaytime,
+            pp.state AS packFlot
+            FROM b_parklot_package pp
+	        LEFT JOIN t_discount_package dp ON pp.package_id = dp.id
+	        WHERE 1=1
+	        AND pp.parklot_id =#{id}
+	        limit 1
+    </select>
+
+    <select id="queryPackageParklotInfoByPackageId" resultType="com.qhieco.response.data.api.DiscountPackageListData$ParklotInfo">
+        SELECT tpt.`id` parklotId, tpt.`name` parklotName FROM b_parklot_package bpp INNER JOIN t_parklot tpt
+          ON tpt.`id`=bpp.`parklot_id` WHERE bpp.`state`=1 AND bpp.`package_id`=#{packageId}
+    </select>
+    
+    <select id="findPackageFormatSum" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.PackageFormatSumData">
+      SELECT t.*  FROM t_package_format_sum t WHERE t.`package_id`=#{id}
+    </select>
+
+    <select id="queryPackageListByPlateId" resultType="com.qhieco.response.data.api.DiscountPackageListData">
+      SELECT tup.`id` packageId, tup.`real_start_time` startTime, tup.`real_end_time` endTime, tup.`state` state, tp.`number` plateNo
+         FROM t_user_package tup INNER JOIN t_plate tp ON tp.`id`=tup.`plate_id` WHERE tup.`state`!=3
+         AND tup.`real_end_time`&gt;=UNIX_TIMESTAMP(NOW())*1000 AND tp.`id` IN
+         <foreach close=")" collection="plateIds" item="plateId" open="(" separator=",">
+             #{plateId}
+         </foreach>
+    </select>
+    
+    <select id="queryPackageTimeRuleByPackageId" resultType="com.qhieco.response.data.api.DiscountPackageListData$TimeRule">
+        SELECT trt.`begin_time` beginTime , trt.`end_time` endTime, trt.`type` FROM t_rule_time trt
+          WHERE trt.`discount_package_id`=#{packageId} AND trt.`state`=1 ORDER BY trt.`begin_time` ASC
+    </select>
+
+<select id="findUserPackageByCount" parameterType="com.qhieco.request.api.UserPackageRequest" resultType="java.lang.Integer">
+        SELECT t.`id` id,t.`mobile_user_id` mobileUserId,
+        t.`package_id` packageId,t.`parklot_id` parklotId,t.`real_start_time`,
+        t.`real_end_time`,t.`state`,t.`create_time`,t.`plate_id` plateId FROM t_user_package t WHERE
+        t.`parklot_id`=#{parklotId} AND t.state=#{state} AND  t.`package_id`=#{packageId}
+        LIMIT 1
+    </select>
+
+    </mapper>

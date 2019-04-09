@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.LockMapper">
+    <select id="queryIdbyParklocId" resultType="com.qhieco.response.data.api.LockTypeData">
+        SELECT tl.`id` lockId, tl.`type` lockType FROM t_lock tl WHERE tl.`parkloc_id`=#{parklocId} AND tl.`state`=1 LIMIT 1
+    </select>
+</mapper>

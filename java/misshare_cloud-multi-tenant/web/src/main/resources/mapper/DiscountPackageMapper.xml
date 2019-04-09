@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.DiscountPackageMapper">
+
+    <!-- 获取套餐信息-分页 -->
+    <select id="pageDiscountPackage" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountPackageData">
+        SELECT id,
+        name,
+        type,
+        effective_daytime AS effectiveDaytime,
+        effective_begin_time AS effectiveBeginTime,
+        effective_end_time AS effectiveEndTime,
+        toplimit,
+        real_quantity AS realQuantity,
+        state,
+        descript,
+        update_time AS updateTime,
+        create_time AS createTime,
+        (toplimit-real_quantity) AS overNumber,
+        CONCAT(FROM_UNIXTIME(effective_begin_time/1000,'%Y-%m-%d'),' 至 ',FROM_UNIXTIME(effective_end_time/1000,'%Y-%m-%d')) AS effectiveTime
+        FROM t_discount_package dp
+        WHERE 1=1
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="state != null">
+            AND dp.state = #{state}
+        </if>
+        ORDER BY dp.create_time DESC
+        LIMIT #{start},#{length}
+    </select>
+
+    <!-- 获取套餐信息-总数 -->
+    <select id="pageDiscountPackageTotalCount" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_discount_package dp
+        WHERE 1=1
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="state != null">
+            AND dp.state = #{state}
+        </if>
+    </select>
+
+    <!-- 获取套餐信息-导出 -->
+    <select id="excelPackage" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountPackageData">
+        SELECT id,
+        name,
+        type,
+        effective_daytime AS effectiveDaytime,
+        effective_begin_time AS effectiveBeginTime,
+        effective_end_time AS effectiveEndTime,
+        toplimit,
+        real_quantity AS realQuantity,
+        state,
+        descript,
+        update_time AS updateTime,
+        create_time AS createTime,
+        (toplimit-real_quantity) as inNumber,
+        CONCAT(FROM_UNIXTIME(effective_begin_time/1000,'%Y-%m-%d'),' 至 ',FROM_UNIXTIME(effective_end_time/1000,'%Y-%m-%d')) AS effectiveTime
+        FROM t_discount_package dp
+        WHERE 1=1
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="state != null">
+            AND dp.state = #{state}
+        </if>
+        ORDER BY dp.create_time DESC
+        LIMIT #{start},#{length}
+    </select>
+
+    <!-- 获取套餐详细 -->
+    <select id="findPackageDetailed" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountPackageData">
+        SELECT dp.id,
+              dp.name,
+              dp.type,
+              dp.state,
+              dp.info_rule AS infoRule,
+              dp.effective_daytime AS effectiveDaytime,
+              dp.effective_begin_time AS effectiveBeginTime,
+              dp.effective_end_time AS effectiveEndTime,
+              dp.toplimit,
+              dp.real_quantity AS realQuantity,
+              dp.descript
+            FROM t_discount_package dp
+            WHERE 1=1
+              AND dp.id=#{id}
+    </select>
+
+    <!-- 根据套餐获取时段列表 -->
+    <select id="findRuleTimeList" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountRuleTimeData">
+        SELECT rt.id,rt.state, rt.type, rt.begin_time AS beginTime, rt.end_time AS endTime
+        FROM t_rule_time rt
+        WHERE 1=1
+        AND rt.state = 1
+        AND rt.discount_package_id=#{id}
+    </select>
+
+    <!-- 套餐规格列表 -->
+    <select id="findFormatSumList" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountFormatSumData">
+        SELECT id AS sumId,daytime,sum_number AS sumNumber
+        FROM t_package_format_sum
+        WHERE 1=1
+        AND package_id=#{id}
+    </select>
+
+    <!-- 新增套餐 -->
+    <insert id="insertDiscountPackageData" parameterType="com.qhieco.request.web.DiscountPackageRequest">
+        INSERT INTO
+        t_discount_package(name,type,state,effective_daytime,effective_begin_time,effective_end_time,info_rule,toplimit,real_quantity,descript,create_time)
+        VALUE(#{name},#{type},#{state},#{effectiveDaytime},#{effectiveBeginTime},#{effectiveEndTime},#{infoRule},#{toplimit},#{realQuantity},#{descript},#{createTime})
+        <selectKey resultType="com.qhieco.response.data.web.DiscountRuleTimeData" keyProperty="id">
+            <![CDATA[SELECT LAST_INSERT_ID() AS id ]]>
+        </selectKey>
+    </insert>
+
+    <!-- 保存套餐规格 -->
+    <insert id="insertFormatSumData" parameterType="com.qhieco.request.web.DiscountPackageRequest">
+        INSERT INTO t_package_format_sum(package_id,daytime,sum_number)
+        VALUE(#{packageId},#{daytime},#{sumNumber})
+    </insert>
+
+    <delete id="delFormatSumData" parameterType="java.lang.Integer">
+      DELETE FROM t_package_format_sum WHERE package_id=#{packageId}
+    </delete>
+
+    <!-- 更新套餐数据 -->
+    <update id="updateDiscountPackageData" parameterType="com.qhieco.request.web.DiscountPackageRequest">
+        UPDATE t_discount_package SET
+        <if test="name !='' and name != null">
+            name = #{name},
+        </if>
+        <if test="type != null">
+            type = #{type},
+        </if>
+        <if test="state != null">
+            state = #{state},
+        </if>
+        <if test="effectiveDaytime != null">
+            effective_daytime = #{effectiveDaytime},
+        </if>
+        <if test="effectiveBeginTime != null">
+            effective_begin_time = #{effectiveBeginTime},
+        </if>
+        <if test="effectiveEndTime != null">
+            effective_end_time = #{effectiveEndTime},
+        </if>
+        <if test="infoRule != null">
+            info_rule = #{infoRule},
+        </if>
+        <if test="toplimit != null">
+            toplimit = #{toplimit},
+        </if>
+        <if test="realQuantity != null">
+            real_quantity = #{realQuantity},
+        </if>
+        <if test="descript !='' and descript != null">
+            descript = #{descript},
+        </if>
+        update_time = #{updateTime}
+        WHERE id=#{id}
+    </update>
+
+    <!-- 时段数据状态改为禁用，关联套餐数据 -->
+    <update id="updateRuleTimeState" parameterType="com.qhieco.request.web.DiscountPackageRequest">
+        UPDATE t_rule_time SET state=0,update_time=#{updateTime} WHERE discount_package_id=#{id}
+    </update>
+
+    <!-- 新增时段，对应套餐数据 -->
+    <insert id="insertRuleTimeData" parameterType="com.qhieco.request.web.DiscountPackageRequest">
+        INSERT INTO t_rule_time(discount_package_id,type,state,begin_time,end_time,create_time)
+        VALUE(#{id},#{ruleType},1,#{ruleTimeBegin},#{ruleTimeEnd},#{createTime})
+    </insert>
+
+    <!-- 修改套餐展示状态 -->
+    <update id="updateParklotState" parameterType="com.qhieco.request.web.DiscountPackageRequest">
+        UPDATE b_parklot_package SET state=#{parklotState} WHERE package_id=#{id} and parklot_id = #{parklotId}
+    </update>
+
+    <!-- 删除小区套餐关联关系 -->
+    <delete id="delParklotByPackage" parameterType="java.lang.Integer">
+        DELETE FROM b_parklot_package WHERE parklot_id=#{parklotId}
+    </delete>
+
+    <!-- 新增小区套餐关联关系 -->
+    <insert id="saveParklotByPackage" parameterType="java.lang.Integer">
+        INSERT INTO b_parklot_package(parklot_id,package_id,state,create_time)
+        VALUE(#{parklotId},#{packageId},#{packageState},UNIX_TIMESTAMP() * 1000)
+    </insert>
+
+    <!-- 获取套餐统计-分页 -->
+    <select id="pagePackageStatic" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountPackageData">
+        SELECT
+        up.id as packageId,
+        p.number,
+        up.real_start_time AS realStartTime,
+        real_end_time AS realEndTime,
+        up.state,
+        toplimit,
+        real_quantity AS realQuantity,
+        (toplimit-real_quantity) AS overNumber,
+        (TO_DAYS(FROM_UNIXTIME(real_end_time/1000,'%Y%m%d%H%m%s'))-TO_DAYS(NOW())) AS inNumber
+        FROM t_user_package up
+        LEFT JOIN t_discount_package dp ON dp.id=up.package_id
+        LEFT JOIN t_plate p ON p.id=up.plate_id
+        WHERE 1=1 AND dp.id=#{id}
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="number != '' and number != null">
+            AND p.number like concat('%', #{number}, '%')
+        </if>
+        <if test="packageState != null">
+            AND up.state = #{packageState}
+        </if>
+        <if test="inNumber != null">
+            AND (TO_DAYS(FROM_UNIXTIME(real_end_time/1000,'%Y%m%d%H%m%s'))-TO_DAYS(NOW())) &lt;= #{inNumber}
+        </if>
+        ORDER BY up.create_time DESC
+        LIMIT #{start},#{length}
+    </select>
+
+    <!-- 套餐统计查询-导出 -->
+    <select id="excelStaticPackage" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="com.qhieco.response.data.web.DiscountPackageStaticData">
+        SELECT
+        up.id as packageId,
+        p.number,
+        up.real_start_time AS realStartTime,
+        real_end_time AS realEndTime,
+        up.state,
+        toplimit,
+        real_quantity AS realQuantity,
+        (toplimit-real_quantity) AS overNumber,
+        (TO_DAYS(FROM_UNIXTIME(real_end_time/1000,'%Y%m%d%H%m%s'))-TO_DAYS(NOW())) AS inNumber
+        FROM t_user_package up
+        LEFT JOIN t_discount_package dp ON dp.id=up.package_id
+        LEFT JOIN t_plate p ON p.id=up.plate_id
+        WHERE 1=1 AND dp.id=#{id}
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="number != '' and number != null">
+            AND p.number like concat('%', #{number}, '%')
+        </if>
+        <if test="packageState != null">
+            AND up.state = #{packageState}
+        </if>
+        <if test="inNumber != null">
+            AND (TO_DAYS(FROM_UNIXTIME(real_end_time/1000,'%Y%m%d%H%m%s'))-TO_DAYS(NOW())) &lt;= #{inNumber}
+        </if>
+        ORDER BY up.create_time DESC
+        LIMIT #{start},#{length}
+    </select>
+
+    <!-- 获取套餐统计-总数 -->
+    <select id="pagePackageStaticTotalCount" parameterType="com.qhieco.request.web.DiscountPackageRequest" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_user_package up
+        LEFT JOIN t_discount_package dp ON dp.id=up.package_id
+        LEFT JOIN t_plate p ON p.id=up.plate_id
+        WHERE 1=1 AND dp.id=#{id}
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="number != '' and number != null">
+            AND p.number like concat('%', #{number}, '%')
+        </if>
+        <if test="packageState != null">
+            AND up.state = #{packageState}
+        </if>
+        <if test="inNumber != null">
+            AND (TO_DAYS(FROM_UNIXTIME(real_end_time/1000,'%Y%m%d%H%m%s'))-TO_DAYS(NOW())) &lt;= #{inNumber}
+        </if>
+    </select>
+
+    <!-- 根据小区获取绑定套餐 -->
+    <select id="findParklotPackageByParkId" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.web.DiscountPackageData">
+        SELECT dp.id,
+            dp.name,
+            dp.effective_daytime AS effectiveDaytime,
+            pp.state AS packFlot,
+            dp.type
+            FROM b_parklot_package pp
+	        LEFT JOIN t_discount_package dp ON pp.package_id = dp.id
+	        WHERE 1=1
+	        AND pp.parklot_id =#{id}
+    </select>
+
+
+</mapper>

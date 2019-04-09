@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.PrizeMapper">
+    <sql id="sqlCondition">
+        <if test="name != null and name != ''">
+            AND tp.name LIKE  concat('%', #{name}, '%')
+        </if>
+    </sql>
+
+    <select id="queryPrizeById" resultType="com.qhieco.response.data.web.PrizeEntityDetailData">
+        SELECT tp.id, tp.`name`, tp.`type`, tp.`money`, tp.`intro`, tp.`file_id` fileId, tp.`start_time` startTime,
+         tp.`end_time` endTime, tf.`path` filePath, tp.`create_time` createTime, tp.`modify_time` modifyTime, tp.`state` state
+         FROM t_prize tp INNER JOIN t_file tf ON tf.`id`=tp.`file_id` WHERE tf.`state`=1 AND tp.`state` != 9999
+        AND tp.`id`=#{id}
+    </select>
+
+    <select id="queryPrizeListByCondition" resultType="com.qhieco.response.data.web.PrizeEntityDetailData">
+         SELECT tp.id, tp.`name`, tp.`type`, tp.`money`, tp.`intro`, tp.`file_id` fileId, tp.`start_time` startTime,
+        tp.`end_time` endTime, tf.`path` filePath, tp.`create_time` createTime, tp.`modify_time` modifyTime, tp.`state` state
+        FROM t_prize tp INNER JOIN t_file tf ON tf.`id`=tp.`file_id` WHERE tf.`state`=1 AND tp.`state`!=9999
+        <include refid="sqlCondition"/>
+        ORDER BY tp.`id` DESC
+
+        <if test="startPage != null and pageSize != null">
+          limit #{startPage}, #{pageSize}
+        </if>
+    </select>
+    
+    <select id="queryCountPrizeListByCondition" resultType="java.lang.Integer">
+        SELECT COUNT(tp.`id`) FROM t_prize tp WHERE tp.`state`!=9999
+        <include refid="sqlCondition"/>
+    </select>
+    
+    <select id="queryValidPrizeAll" resultType="com.qhieco.response.data.web.PrizeIdAdNameInfoData">
+        <![CDATA[
+          SELECT id, NAME prizeName FROM t_prize tp WHERE state=1 AND
+          (end_time IS NULL OR (end_time >= #{endTime} AND tp.`end_time`>=UNIX_TIMESTAMP(NOW())*1000) AND tp.`start_time`<=#{startTime})
+      ]]>
+    </select>
+
+    <select id="countValidPrizeById" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM t_prize tp WHERE tp.`state` NOT IN(9999, 0)
+        AND (tp.`end_time` IS NULL OR tp.`end_time` > UNIX_TIMESTAMP(NOW())*1000) AND tp.`id`=#{prizeId}
+    </select>
+
+    <select id="countValidReceivePrize" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM t_prize_receive_record tprr INNER JOIN t_prize tp ON tp.`id`=tprr.`prize_id`
+         WHERE tp.id=#{prizeId} AND (tp.`end_time` IS NULL OR tp.`end_time`> UNIX_TIMESTAMP(NOW())*1000)
+    </select>
+
+    <select id="queryUnexpiredPrizeState" resultType="java.lang.Integer">
+        SELECT tp.`state` FROM t_prize tp WHERE  (tp.`end_time` IS NULL OR tp.`end_time`> UNIX_TIMESTAMP(NOW()) * 1000) AND tp.`id`=#{prizeId};
+    </select>
+    
+    <select id="countRepeatPrizeName" resultType="java.lang.Integer">
+      SELECT COUNT(1) FROM t_prize tp WHERE tp.`name`=#{prizeName}
+        <if test="prizeId != null">
+            AND tp.`id` != #{prizeId}
+        </if>
+    </select>
+</mapper>

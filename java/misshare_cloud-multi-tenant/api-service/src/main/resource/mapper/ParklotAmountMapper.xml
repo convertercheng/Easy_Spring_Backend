@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ParklotAmountMapper">
+<update id="updateParklotAmountByParklotId">
+        
+              UPDATE t_parklot_amount pa
+                -- 已发布车位数
+                SET pa.publish_amount = #{publishAmount},
+                -- 已预约车位数 等于 预约阶段的车位数 加上 正在停车阶段的车位数
+                pa.reserved_amount = #{reservedAmount},
+                -- 可预约车位数
+                pa.reservable_amount= #{reservableAmount},
+                pa.idle_amount = #{publishAmount} - #{reservedAmount},
+                pa.modify_time = #{now}
+                WHERE pa.parklot_id = #{parklotId};
+        
+    </update>
+
+<update id="updateByParklotId" parameterType="java.util.HashMap">
+        
+           UPDATE t_parklot_amount pa
+					-- 已发布车位数
+            SET pa.publish_amount = (SELECT count(DISTINCT tpc.id) from t_publish p INNER JOIN t_parkloc tpc ON tpc.id=p.parkloc_id
+                    WHERE tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0 AND p.state&lt;&gt;0),
+					-- 已预约车位数 等于 预约阶段的车位数 加上 正在停车阶段的车位数
+            pa.reserved_amount = (SELECT count(DISTINCT tpc.id) from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE
+                  tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0
+                AND top.state in (1300,1301) AND top.id NOT IN(SELECT reserve_id from t_order_parking WHERE reserve_id IS NOT NULL AND parklot_id=top.parklot_id))
+
+					+ (SELECT count(DISTINCT tpc.id) from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE tpc.parklot_id=#{parklotId}
+					AND tpc.state&lt;&gt;0
+                AND top.state in (1302) AND top.reserve_id IS NOT NULL),
+
+					-- 可预约车位数
+			pa.reservable_amount= (SELECT COUNT(DISTINCT tpc.id) FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                 WHERE tpc.parklot_id=#{parklotId}
+                     AND tpc.state =1101 and ts.state=1
+            AND (
+                ((ts.end_time - #{now}) &gt; #{timeInterval}
+                 AND ts.start_time&lt;=#{now})
+            OR
+                ((ts.start_time - #{now}) &lt;= #{advanceReservationTimeVALUE} AND ts.start_time &gt;=#{now})
+            )),
+            pa.idle_amount = pa.publish_amount - pa.reserved_amount,
+            pa.modify_time = #{now}
+            WHERE pa.parklot_id = #{parklotId};
+        
+    </update>
+
+    <select id="queryReservableParklocIdByParklotId" resultType="java.lang.Integer">
+        
+          SELECT DISTINCT tpc.id FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                 WHERE tpc.parklot_id=#{parklotId}
+                     AND tpc.state =1101 AND ts.state=1
+             AND (
+                ((ts.end_time - #{now}) &gt; #{timeInterval}
+                 AND ts.start_time&lt;=#{now})
+            OR
+                ((ts.start_time - #{now}) &lt;= #{advanceReservationTimeVALUE} AND ts.start_time &gt;=#{now}
+                and (ts.end_time - #{now}) &gt; #{timeInterval})
+            )
+        
+    </select>
+
+    <select id="queryUseAmountByParklotId1" resultType="java.lang.Integer">
+        
+          SELECT (SELECT COUNT(DISTINCT tpc.id) FROM t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE
+               tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0 AND top.state IN (1300,1301)
+               AND top.id NOT IN(SELECT reserve_id FROM t_order_parking WHERE reserve_id IS NOT NULL AND parklot_id=top.parklot_id))
+                  +
+          (SELECT COUNT(DISTINCT tpc.id) FROM t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE tpc.parklot_id=#{parklotId}
+				AND tpc.state&lt;&gt;0
+                AND top.state=1302 AND top.reserve_id IS NOT NULL) useAmount;
+        
+    </select>
+
+    <select id="querySel2" resultType="com.qhieco.response.data.api.OrderParkingData">
+        
+           SELECT reserve_id as reserveId,parklot_id as parklogId FROM t_order_parking WHERE reserve_id IS NOT NULL
+        
+    </select>
+
+    <select id="queryReservableAmountByParklotId" resultType="java.lang.Integer">
+        
+          SELECT COUNT(DISTINCT tpc.id) FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                 WHERE tpc.parklot_id=#{parklotId}
+                     AND tpc.state =1101 AND ts.state=1
+             AND (
+                ((ts.end_time - #{now}) &gt; #{timeInterval}
+                 AND ts.start_time&lt;=#{now})
+            OR
+                ((ts.start_time - #{now}) &lt;= #{advanceReservationTimeVALUE} AND ts.start_time &gt;=#{now}
+                AND  (ts.end_time - #{now}) &gt; #{timeInterval})
+            )
+        
+    </select>
+
+
+    <select id="queryPublishedAmountByParklotId" resultType="java.lang.Integer">
+        
+             SELECT COUNT(DISTINCT tpc.id) FROM t_publish p INNER JOIN t_parkloc tpc ON tpc.id=p.parkloc_id
+                    WHERE tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0 AND p.state&lt;&gt;0
+        
+    </select>
+
+
+    <select id="queryUseAmountByParklotId" resultType="java.lang.Integer">
+        
+         SELECT (SELECT COUNT(DISTINCT tpc.id) FROM (SELECT parkloc_id FROM t_order_parking WHERE state IN (1300,1301)
+         AND id NOT IN (SELECT reserve_id FROM t_order_parking WHERE reserve_id IS NOT NULL )) top
+        INNER JOIN (SELECT id FROM t_parkloc WHERE parklot_id=#{parklotId} AND state &lt;&gt;0) tpc WHERE tpc.id=top.parkloc_id) +
+        (SELECT COUNT(DISTINCT tpc.id) FROM (SELECT parkloc_id FROM t_order_parking WHERE state = 1302 AND reserve_id IS NOT NULL) top
+        INNER JOIN (SELECT id FROM t_parkloc WHERE parklot_id=#{parklotId} AND state &lt;&gt; 0) tpc WHERE tpc.id=top.parkloc_id) useAmount;
+        
+    </select>
+
+
+
+
+    <select id="querySel3" resultType="java.lang.Integer">
+        
+            SELECT COUNT(DISTINCT tpc.id)
+			FROM t_order_parking top
+			INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id
+			WHERE tpc.parklot_id=#{parklotId}
+				AND tpc.state&lt;&gt;0
+				AND top.state=1302
+				AND top.reserve_id IS NOT NULL
+        
+    </select>
+
+
+
+
+
+    <update id="updateAllParklotAmount">
+        
+              update t_parklot_amount pa set
+            pa.publish_amount=
+            (SELECT count(DISTINCT tpc.id) from t_publish p INNER JOIN t_parkloc tpc ON tpc.id=p.parkloc_id WHERE tpc.parklot_id=pa.parklot_id AND tpc.state&lt;&gt;0 AND p.state&lt;&gt;0),
+
+            pa.reserved_amount = (SELECT count(DISTINCT tpc.id) from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE tpc.parklot_id=pa.parklot_id AND tpc.state&lt;&gt;0
+                AND top.state in (1300,1301) AND top.id NOT IN(SELECT reserve_id from t_order_parking WHERE reserve_id IS NOT NULL AND parklot_id=top.parklot_id))
+					+ (SELECT count(DISTINCT tpc.id) from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE tpc.parklot_id=pa.parklot_id AND tpc.state&lt;&gt;0
+                AND top.state in (1302) AND top.reserve_id IS NOT NULL),
+
+            pa.reservable_amount= (SELECT COUNT(DISTINCT tpc.id) FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                 WHERE tpc.parklot_id=pa.parklot_id
+                     AND tpc.state =#{published} and ts.state=1
+            AND (
+                ((ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval}
+                 AND ts.start_time&lt;=UNIX_TIMESTAMP(NOW()) *1000)
+            OR
+                ((ts.start_time - UNIX_TIMESTAMP(NOW()) *1000) &lt;= (SELECT bpp.qhvalue VALUE FROM b_parklot_params bpp WHERE bpp.parklot_id = tpc.`parklot_id`
+                    AND bpp.state=1 AND bpp.qhkey=#{advanceReservationTimeKey} LIMIT 1)*60*1000 AND ts.start_time &gt;=UNIX_TIMESTAMP(NOW())*1000)
+            )),
+
+            pa.idle_amount = pa.publish_amount - pa.reserved_amount,
+            pa.modify_time = UNIX_TIMESTAMP(NOW()) * 1000;
+        
+    </update>
+
+
+    <select id="querySel1" resultType="com.qhieco.response.data.api.OrderParkingData">
+        
+           SELECT tpc.id AS parklocId,top.id
+            FROM t_order_parking top
+            INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id
+                WHERE tpc.parklot_id=304 AND tpc.state&lt;&gt;0
+                AND top.state IN (1300,1301)
+        
+    </select>
+
+    <update id="updateByParklotId1" parameterType="Integer">
+        
+           UPDATE t_parklot_amount pa
+					-- 已发布车位数
+            SET pa.publish_amount = (SELECT count(DISTINCT tpc.id) from t_publish p INNER JOIN t_parkloc tpc ON tpc.id=p.parkloc_id
+                    WHERE tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0 AND p.state&lt;&gt;0),
+					-- 已预约车位数 等于 预约阶段的车位数 加上 正在停车阶段的车位数
+            pa.reserved_amount = (SELECT count(DISTINCT tpc.id) from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE
+                  tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0
+                AND top.state in (1300,1301) AND top.id NOT IN(SELECT reserve_id from t_order_parking WHERE reserve_id IS NOT NULL AND parklot_id=top.parklot_id))
+
+					+ (SELECT count(DISTINCT tpc.id) from t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id=top.parkloc_id WHERE tpc.parklot_id=#{parklotId} AND tpc.state&lt;&gt;0
+                AND top.state in (1302) AND top.reserve_id IS NOT NULL),
+
+					-- 可预约车位数
+			pa.reservable_amount= (SELECT COUNT(DISTINCT tpc.id) FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                 WHERE tpc.parklot_id=#{parklotId}
+                     AND tpc.state =1101 and ts.state=1
+            AND (
+                ((ts.end_time - #{now}) &gt; #{timeInterval}
+                 AND ts.start_time&lt;=#{now})
+            OR
+                ((ts.start_time - #{now}) &lt;= (SELECT bpp.qhvalue VALUE FROM b_parklot_params bpp WHERE bpp.parklot_id = tpc.`parklot_id`
+                    AND bpp.state=1 AND bpp.qhkey=#{advanceReservationTimeKey} LIMIT 1)*60*1000 AND ts.start_time &gt;=#{now})
+            )),
+            pa.idle_amount = pa.publish_amount - pa.reserved_amount,
+            pa.modify_time = #{now}
+            WHERE pa.parklot_id = #{parklotId};
+        
+    </update>
+
+    </mapper>

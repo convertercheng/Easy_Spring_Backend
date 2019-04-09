@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.StatisticsMapper">
+
+    <select id="findStatisticsByActivityType" parameterType="com.qhieco.request.web.StatisticsRequest" resultType="com.qhieco.response.data.web.StatisticsData">
+       SELECT COUNT(tb1.id) AS countNum,
+       		SUM(tb1.sumNum) AS sumNum,
+			SUM(tb1.sumNum)/COUNT(tb1.id) AS avgNum,
+			(SUM(tb1.sumNum)+COUNT(tb1.id)) AS allSumNum,
+			FROM_UNIXTIME(tb1.create_time/1000, '%Y-%m-%d %H:%i:%S') AS  createDate,
+			DAYOFWEEK(FROM_UNIXTIME(tb1.create_time/1000, '%Y-%m-%d %H')) AS weeks,
+			FROM_UNIXTIME(tb1.create_time/1000, '%d') AS days,
+			FROM_UNIXTIME(tb1.create_time/1000, '%H') AS hours,
+			tb1.days as daysDate,
+			tb1.hours as hoursDate
+			FROM (
+					SELECT id, SUM(VALUE) sumNum, type, create_time,
+						FROM_UNIXTIME(create_time/1000, '%Y-%m-%d %H') AS hours,
+						FROM_UNIXTIME(create_time/1000, '%Y-%m-%d') AS days
+						FROM t_statistics
+						WHERE 1=1
+							AND create_time &gt; #{beginStatistTime}
+							AND create_time &lt; #{endStatistTime}
+							AND activity_id=#{activityId}
+							AND type=#{type}
+							GROUP BY user_id, ${dateType}
+							ORDER BY create_time ASC
+				  ) AS tb1
+			GROUP BY ${dateType}
+			ORDER BY tb1.create_time ASC
+    </select>
+
+	<select id="getActivityOffCountData" parameterType="com.qhieco.request.web.StatisticsRequest" resultType="com.qhieco.response.data.web.StatisticsData">
+		SELECT 	SUM(tb2.registerNum+tb2.firstOrderNum+tb2.bindNum) AS allTypeSumNum,
+			tb2.*
+			FROM (
+				SELECT  tb1.id,
+					tb1.TYPE,
+					tb1.days AS daysDate,
+					tb1.hours AS hoursDate,
+					tb1.create_time,
+					(CASE tb1.arType WHEN 1 THEN tb1.sumNum ELSE 0 END ) AS registerNum ,
+					(CASE tb1.arType WHEN 2 THEN tb1.sumNum ELSE 0 END ) AS firstOrderNum ,
+					(CASE tb1.arType WHEN 3 THEN tb1.sumNum ELSE 0 END ) AS bindNum ,
+					FROM_UNIXTIME(tb1.create_time/1000, '%Y-%m-%d %H:%i:%S') AS  create_times,
+					DAYOFWEEK(FROM_UNIXTIME(tb1.create_time/1000, '%Y-%m-%d %H')) AS weeks,
+                    FROM_UNIXTIME(tb1.create_time/1000, '%d') AS days,
+                    FROM_UNIXTIME(tb1.create_time/1000, '%H') AS hours
+					FROM (
+						SELECT 	st.id,
+							st.TYPE,
+							SUM(VALUE) sumNum,
+							st.create_time,
+							ar.type AS arType,
+							FROM_UNIXTIME(st.create_time/1000, '%Y-%m-%d %H') AS hours,
+							FROM_UNIXTIME(st.create_time/1000, '%Y-%m-%d') AS days
+							FROM t_statistics st
+							INNER JOIN t_activity ac ON st.activity_id=ac.id
+							INNER JOIN t_activity_rule ar ON ar.activity_id=ac.id
+							WHERE 1=1
+								AND st.create_time &gt; #{beginStatistTime}
+								AND st.create_time &lt; #{endStatistTime}
+								AND ar.activity_id=#{activityId}
+								GROUP BY ar.TYPE,${dateType}
+								ORDER BY st.create_time DESC
+						) AS tb1
+				) AS tb2
+				GROUP BY tb2.daysDate
+				ORDER BY tb2.create_time DESC
+	</select>
+
+	<select id="getActivityCountByList" parameterType="com.qhieco.request.web.StatisticsRequest" resultType="com.qhieco.response.data.web.StatisticsData">
+		SELECT
+		    st.id,
+			st.create_time,
+			st.type,
+			ac.name AS acName,
+			ac.type AS acType,
+			CONCAT(FROM_UNIXTIME(ac.begin_time/1000, '%Y-%m-%d %H:%i:%S'),'/',FROM_UNIXTIME(ac.end_time/1000, '%Y-%m-%d %H:%i:%S')) AS acTime,
+			ac.state AS acState,
+            ar.type AS arType,
+            ar.state AS arState,
+            la.type AS laType,
+            GROUP_CONCAT(art.trigger_type) AS triggerTypes,
+            GROUP_CONCAT(tag.name) AS tagNames,
+    		um.phone as phone,
+            um1.phone AS target1Phone,
+            um2.phone AS target2Phone,
+            pz.name as prizeName,
+            pr.number AS prizeNumber,
+            pr.create_time AS prizeCreateTime
+			FROM t_statistics st
+				LEFT JOIN t_activity ac ON st.activity_id=ac.id
+				LEFT JOIN t_user_mobile um ON um.id = st.user_id
+				LEFT JOIN t_user_mobile um1 ON um1.pid=um.id
+                LEFT JOIN t_user_mobile um2 ON um2.id=um.pid
+                LEFT JOIN t_prize_receive_record pr ON (pr.mobile_user_id=um.id) AND pr.mobile_user_id=ac.id
+				LEFT JOIN t_prize pz ON pz.id=pr.prize_id
+				LEFT JOIN b_user_tag ut ON um.id=ut.mobile_user_id
+		        LEFT JOIN t_tag tag ON tag.id=ut.tag_id
+				LEFT JOIN t_activity_rule ar ON ar.activity_id=ac.id
+				LEFT JOIN t_activity_rule_trigger art ON art.activity_rule_id=ar.id
+				LEFT JOIN t_ladder la ON la.activity_rule_id = ar.id
+			WHERE 1=1
+				AND ac.id =#{activityId}
+				ORDER by pr.create_time ASC
+				LIMIT #{start},#{length}
+	</select>
+
+	<select id="pageActivityCountTotalCount" parameterType="com.qhieco.request.web.StatisticsRequest" resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM (SELECT GROUP_CONCAT(art.trigger_type) AS counts
+			FROM t_statistics st
+				LEFT JOIN t_activity ac ON st.activity_id=ac.id
+				LEFT JOIN t_user_mobile um ON um.id = st.user_id
+				LEFT JOIN t_user_mobile um1 ON um1.pid=um.id
+                LEFT JOIN t_user_mobile um2 ON um2.id=um.pid
+                LEFT JOIN t_prize_receive_record pr ON (pr.mobile_user_id=um.id) AND pr.mobile_user_id=ac.id
+				LEFT JOIN t_prize pz ON pz.id=pr.prize_id
+				LEFT JOIN b_user_tag ut ON um.id=ut.mobile_user_id
+		        LEFT JOIN t_tag tag ON tag.id=ut.tag_id
+				LEFT JOIN t_activity_rule ar ON ar.activity_id=ac.id
+				LEFT JOIN t_activity_rule_trigger art ON art.activity_rule_id=ar.id
+				LEFT JOIN t_ladder la ON la.activity_rule_id = ar.id
+			WHERE 1=1
+				AND ac.id =#{activityId}
+				) tb1
+	</select>
+
+</mapper>

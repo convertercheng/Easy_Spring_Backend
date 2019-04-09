@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.StatisticsMapper">
+<select id="findActivityByTriggerType" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		select count(*) from t_statistics where user_id = #{userId} and type =#{type}
+	</select>
+
+<insert id="saveStatisticsData" parameterType="com.qhieco.response.data.api.StatisticsData">
+		insert into t_statistics(activity_id,type,user_id,value,create_time) value(#{activityId},#{type},#{userId},#{value},#{createTime})
+	</insert>
+
+	</mapper>

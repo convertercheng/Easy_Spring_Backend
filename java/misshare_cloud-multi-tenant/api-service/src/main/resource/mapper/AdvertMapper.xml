@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.AdvertMapper">
+<select id="queryAdvertInfoByPhoneType" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.AdvertRepData">
+        SELECT tf.path filePath, ta.countdown countdown, ta.jumpable jumpable, ta.href href from t_advert ta INNER JOIN
+            t_file tf on ta.file_id=tf.id WHERE ta.phone_type=#{phoneType} and ta.state=1 limit 1
+    </select>
+
+</mapper>

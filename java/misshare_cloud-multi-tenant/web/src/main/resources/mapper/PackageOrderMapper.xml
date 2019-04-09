@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.PackageOrderMapper">
+
+    <!-- 获取套餐订单-分页 -->
+    <select id="pagePackageOrder" parameterType="com.qhieco.request.web.PackageOrderRequest" resultType="com.qhieco.response.data.web.PackageOrderData">
+        SELECT po.id,
+            dp.name,
+            dp.type,
+            p.number,
+            um.phone,
+            um.id AS mobileUserId,
+            dp.id AS packageId,
+            po.total_fee AS totalFee,
+            po.discount_fee AS discountFee,
+            po.real_fee AS realFee,
+            po.pay_channel AS payChannel,
+            po.serial_number AS serialNumber,
+            po.create_time AS createTime,
+            po.state
+            FROM t_package_order po
+            LEFT JOIN t_discount_package dp ON dp.id = po.package_id
+            LEFT JOIN t_plate p ON p.id = po.plate_id
+            LEFT JOIN t_user_mobile um ON um.id = po.mobile_user_id
+                WHERE 1=1
+                    <if test="name != '' and name != null">
+                        AND dp.name like concat('%', #{name}, '%')
+                    </if>
+                    <if test="phone != '' and phone != null">
+                        AND um.phone like concat('%', #{phone}, '%')
+                    </if>
+                    <if test="number != '' and number != null">
+                        AND p.number like concat('%', #{number}, '%')
+                    </if>
+                    <if test="tradeNo != '' and tradeNo != null">
+                        AND po.trade_no like concat('%', #{tradeNo}, '%')
+                    </if>
+                    <if test="payChannel != null">
+                        AND po.pay_channel = #{payChannel}
+                    </if>
+                    <if test="type != null">
+                        AND dp.type = #{type}
+                    </if>
+                    <if test="beginTime != null and endTime !=null">
+                        AND po.pay_time &lt; #{beginTime} and po.pay_time &gt; #{endTime}
+                    </if>
+                    ORDER BY po.create_time DESC
+                    LIMIT #{start},#{length}
+    </select>
+
+    <!-- 获取套餐订单-总数 -->
+    <select id="pagePackageOrderTotalCount" parameterType="com.qhieco.request.web.PackageOrderRequest" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_package_order po
+            LEFT JOIN t_discount_package dp ON dp.id = po.package_id
+            LEFT JOIN t_plate p ON p.id = po.plate_id
+            LEFT JOIN t_user_mobile um ON um.id = po.mobile_user_id
+            WHERE 1=1
+                <if test="name != '' and name != null">
+                    AND dp.name like concat('%', #{name}, '%')
+                </if>
+                <if test="phone != '' and phone != null">
+                    AND um.phone like concat('%', #{phone}, '%')
+                </if>
+                <if test="number != '' and number != null">
+                    AND p.number like concat('%', #{number}, '%')
+                </if>
+                <if test="tradeNo != '' and tradeNo != null">
+                    AND po.trade_no like concat('%', #{tradeNo}, '%')
+                </if>
+                <if test="payChannel != null">
+                    AND po.pay_channel = #{payChannel}
+                </if>
+                <if test="type != null">
+                    AND dp.type = #{type}
+                </if>
+                <if test="beginTime != null and endTime !=null">
+                    AND po.pay_time &lt; #{beginTime} and po.pay_time &gt; #{endTime}
+                </if>
+    </select>
+
+    <!-- 根据订单id获取详细 -->
+    <select id="findPackageOrderById" parameterType="com.qhieco.request.web.PackageOrderRequest" resultType="com.qhieco.response.data.web.PackageOrderData">
+       SELECT po.id,dp.name,dp.type,p.number,um.phone,po.total_fee AS totalFee,po.discount_fee AS discountFee,
+            po.real_fee AS realFee,po.pay_channel AS payChannel,po.serial_number AS serialNumber,po.create_time AS createTime,po.state,co.coupon_code AS couponCode,
+            (TO_DAYS(FROM_UNIXTIME(real_end_time/1000,'%Y%m%d%H%m%s'))-TO_DAYS(NOW())) AS inNumber
+            FROM t_package_order po
+            LEFT JOIN t_user_package up ON up.mobile_user_id = po.mobile_user_id
+            LEFT JOIN t_discount_package dp ON dp.id = po.package_id
+            LEFT JOIN t_plate p ON p.id = po.plate_id
+            LEFT JOIN t_user_mobile um ON um.id = po.mobile_user_id
+            LEFT JOIN b_coupon_package_order cpo ON cpo.order_id = po.id
+            LEFT JOIN t_coupon co ON co.id = cpo.coupon_id
+            WHERE 1=1 AND po.id=#{id}
+    </select>
+
+    <!-- 导出套餐订单列表 -->
+    <select id="excelPackageOrder" parameterType="com.qhieco.request.web.PackageOrderRequest" resultType="com.qhieco.response.data.web.PackageOrderData">
+        SELECT po.id,dp.name,dp.type,p.number,um.phone,po.total_fee AS totalFee,po.discount_fee AS discountFee,
+        po.real_fee AS realFee,po.pay_channel AS payChannel,po.serial_number AS serialNumber,po.create_time AS createTime,po.state
+        FROM t_package_order po
+        LEFT JOIN t_discount_package dp ON dp.id = po.package_id
+        LEFT JOIN t_plate p ON p.id = po.plate_id
+        LEFT JOIN t_user_mobile um ON um.id = po.mobile_user_id
+        WHERE 1=1
+        <if test="name != '' and name != null">
+            AND dp.name like concat('%', #{name}, '%')
+        </if>
+        <if test="phone != '' and phone != null">
+            AND um.phone like concat('%', #{phone}, '%')
+        </if>
+        <if test="number != '' and number != null">
+            AND p.number like concat('%', #{number}, '%')
+        </if>
+        <if test="tradeNo != '' and tradeNo != null">
+            AND po.trade_no like concat('%', #{tradeNo}, '%')
+        </if>
+        <if test="payChannel != null">
+            AND po.pay_channel = #{payChannel}
+        </if>
+        <if test="type != null">
+            AND dp.type = #{type}
+        </if>
+        <if test="beginTime != null and endTime !=null">
+            AND po.pay_time &lt; #{beginTime} and po.pay_time &gt; #{endTime}
+        </if>
+        ORDER BY po.create_time DESC
+        LIMIT #{start},#{length}
+    </select>
+
+</mapper>

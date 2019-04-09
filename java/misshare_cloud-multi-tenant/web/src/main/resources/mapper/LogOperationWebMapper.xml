@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.LogOperateWebMapper">
+
+    <select id="queryOperationWebList" parameterType="com.qhieco.request.web.LogOperationWebRequest"
+            resultType="com.qhieco.response.data.web.LogOperationWebData">
+        SELECT t1.`state`,t2.`id` webUserId,t2.`username` webUserName,t1.`content`,
+        t1.`source_ip` sourceIp,t1.`operate_time` operateTime,t1.state FROM
+        t_log_operation_web t1 INNER JOIN t_user_web t2 ON t1.`web_user_id`=t2.`id`
+        <include refid="pageOperationWhere"/>
+        ORDER BY t1.`operate_time` DESC
+        LIMIT #{start},#{length}
+    </select>
+
+
+    <select id="queryOperationWebCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.LogOperationWebRequest">
+        SELECT COUNT(t1.`id`) FROM
+        t_log_operation_web t1 INNER JOIN t_user_web t2 ON t1.`web_user_id`=t2.`id`
+        <include refid="pageOperationWhere"/>
+    </select>
+
+    <select id="operationWebListExcel" parameterType="com.qhieco.request.web.LogOperationWebRequest"
+            resultType="com.qhieco.response.data.web.LogOperationWebData">
+        SELECT t1.`state`,t2.`id` webUserId,t2.`username` webUserName,t1.`content`,t1.`source_ip` sourceIp,t1.`operate_time` operateTime FROM
+        t_log_operation_web t1 INNER JOIN t_user_web t2 ON t1.`web_user_id`=t2.`id`
+        <include refid="pageOperationWhere"/>
+        ORDER BY t1.`operate_time` DESC
+        limit 5000;
+    </select>
+
+
+    <sql id="pageOperationWhere">
+          <where>
+              1=1
+              <if test="content!='' and content!=null ">
+                  AND t1.content  LIKE  concat(concat('%',#{content}),'%')
+              </if>
+              <if test="sourceIp!='' and sourceIp!=null ">
+                  AND t1.source_ip  LIKE  concat(concat('%',#{sourceIp}),'%')
+              </if>
+              <if test="startOperateTime!=null and startOperateTime!='' and endOperateTime!=null and endOperateTime!=''">
+                  AND t1.operate_time BETWEEN #{startOperateTime} and #{endOperateTime}
+              </if>
+          </where>
+    </sql>
+
+</mapper>

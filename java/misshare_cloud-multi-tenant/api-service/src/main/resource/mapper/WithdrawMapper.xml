@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.WithdrawMapper">
+<select id="queryWithdrawRecordListByUserId" resultType="com.qhieco.response.data.api.WithdrawRecordRespData">
+        SELECT tow.id withdrawId, tow.state state, tow.balance balance, tbc.bank bankName, tbc.bank_number bankNumber,
+        IF(tow.state=#{processingState}, tow.apply_time, tow.complete_time) withdrawTime, tow.message message
+        from t_order_withdraw tow INNER JOIN t_bank_card tbc ON tow.bank_card_id=tbc.id WHERE tow.mobile_user_id = #{userId}
+        ORDER BY tow.apply_time DESC LIMIT #{startPage}, #{pageSize};
+    </select>
+</mapper>

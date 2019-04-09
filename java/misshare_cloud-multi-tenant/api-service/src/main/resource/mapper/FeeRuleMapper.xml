@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.FeeRuleMapper">
+<resultMap id="parkingFeeRuleMap" type="com.qhieco.response.data.web.ParkingFeeRuleInfoData">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="type" property="type" />
+        <collection ofType="com.qhieco.commonentity.FeeRuleParking" property="feeRuleParkings">
+            <result column="startTime" property="startTime" />
+            <result column="endTime" property="endTime" />
+            <result column="firstHourFee" property="firstHourFee" />
+            <result column="otherTimePeriod" property="otherTimePeriod" />
+            <result column="otherTimeFee" property="otherTimeFee" />
+            <result column="maxFee" property="maxFee" />
+            <result column="freeUseTime" property="freeUseTime" />
+            <result column="overTimeFee" property="overTimeFee" />
+            <result column="weekday" property="weekday" />
+        </collection>
+    </resultMap>
+
+    <select id="queryParkingFeeRuleById" parameterType="java.lang.Integer" resultMap="parkingFeeRuleMap">
+        SELECT frpb.id as id,frpb.name as name,frpb.type as type,frp.first_hour_fee as firstHourFee,frp.other_time_period as otherTimePeriod,frp.other_time_fee as otherTimeFee,
+        frp.max_fee as maxFee,frp.free_use_time as freeUseTime,frp.over_time_fee as overTimeFee,frp.weekday as weekday,frp.start_time startTime,frp.end_time as endTime
+        from t_fee_rule_parking_base frpb left join  t_fee_rule_parking frp on frpb.id = frp.fee_rule_parking_base_id and frp.state = 1
+        where frpb.state = 1 and frpb.id = (select pfrp.fee_rule_id from b_parklot_fee_rule_parking pfrp where pfrp.parklot_id = #{id} and pfrp.state=1)
+        order by frp.start_time is null ,frp.start_time asc
+    </select>
+
+
+</mapper>

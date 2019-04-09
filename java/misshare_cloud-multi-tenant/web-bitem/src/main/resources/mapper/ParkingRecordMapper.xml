@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webbitemmapper.ParkingRecordMapper">
+
+    <sql id="sqlCondition">
+        <choose>
+            <!-- 进场时间 -->
+            <when test="queryType == 1">
+                <if test="startTime != null and startTime != ''">
+                    AND top.`real_start_time` >= #{startTime}
+                </if>
+                <if test="endTime != null and endTime != ''">
+                    <![CDATA[  AND top.`real_start_time` <= #{endTime} ]]>
+                </if>
+            </when>
+
+            <!--  出场时间 -->
+            <when test="queryType == 2">
+                <if test="startTime != null and startTime != ''">
+                    AND top.`real_end_time` >= #{startTime}
+                </if>
+                <if test="endTime != null and endTime != ''">
+                    <![CDATA[ AND top.`real_end_time` <= #{endTime} ]]>
+                </if>
+            </when>
+        </choose>
+    </sql>
+
+    <select id="queryParkingRecordListByCondition" resultType="com.qhieco.response.data.webbitem.ParkingRecordData">
+        <![CDATA[
+      SELECT top.`id`, (SELECT number FROM t_plate tp WHERE tp.id=top.`plate_id`) plateNo, tr.`start_time` reserveStartTime,
+        tr.`end_time` reserveEndTime, top.`real_start_time` realStartTime, top.`real_end_time` realEndTime,
+        IF(top.`real_end_time` IS NULL, NULL , top.`real_end_time`-top.`real_start_time`) parkingTime, top.`total_fee` parkingFee
+        FROM t_order_parking top INNER JOIN t_reservation tr ON tr.`id`=top.`reservation_id` WHERE top.`reserve_id` IS NOT NULL
+        AND top.`parklot_id`= #{parklotId}
+      ]]>
+
+        <include refid="sqlCondition"/>
+        ORDER BY top.id DESC
+
+        <if test="startPage != null and pageSize != null">
+            LIMIT #{startPage}, #{pageSize};
+        </if>
+    </select>
+
+    <select id="countParkingRecordListByCondition" resultType="java.lang.Integer">
+        SELECT COUNT(top.`id`) FROM t_order_parking top WHERE top.`reserve_id` IS NOT NULL
+        AND top.`parklot_id`= #{parklotId}
+        <include refid="sqlCondition"/>
+    </select>
+</mapper>

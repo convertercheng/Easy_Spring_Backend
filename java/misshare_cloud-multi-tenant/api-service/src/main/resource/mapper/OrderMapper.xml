@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.OrderMapper">
+<select id="queryBillListByUserId" resultType="com.qhieco.response.data.api.BillRepData">
+        
+        <if test="userType == 0"> 
+            SELECT tot.type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number
+            serialNumber
+            FROM t_order_total tot WHERE mobile_user_id = #{userId} AND (state IN (#{paid}, #{reserved}, #{timeout},
+            #{refund})
+            AND tot.`serial_number` NOT IN(SELECT serial_number FROM t_order_parking WHERE
+            mobile_user_id=tot.`mobile_user_id` AND pay_channel=#{payChannelCoupon})
+            <if test="date != '' and date != null">
+                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+            </if>
+            <if test="queryType != -1">
+                AND tot.type = #{type}
+            </if>
+                OR (tot.`state`=1309 AND tot.`account` &gt; 0
+                    <if test="date != '' and date != null">
+                        AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                    </if>
+                    <if test="queryType != -1">
+                        AND tot.type = #{type}
+                    </if>
+                  )
+              )
+              ORDER BY tot.update_time DESC
+        </if>
+        
+        <if test="userType == 1"> 
+            <choose>
+                <when test="queryType == 0 or queryType == 1 or queryType == 2"> 
+                    SELECT tmp.type,tmp.account, tmp.serialNumber, tmp.state, tmp.updateTime from (
+                        (SELECT tot.type type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+                        FROM t_order_total tot WHERE mobile_user_id = #{userId} AND (tot.state IN (#{paid}, #{reserved}, #{timeout}, #{refund})
+                        AND tot.`serial_number` NOT IN(SELECT serial_number FROM t_order_parking WHERE mobile_user_id=tot.`mobile_user_id` AND pay_channel=#{payChannelCoupon})
+                        <if test="date != '' and date != null">
+                            AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                        </if>
+                        <if test="queryType != -1">
+                            AND tot.type = #{type}
+                        </if>
+                            OR (tot.`state`=1309 AND tot.`account` &gt; 0
+                            <if test="date != '' and date != null">
+                                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                            </if>
+                            <if test="queryType != -1">
+                                AND tot.type = #{type}
+                            </if>
+                            )
+                          )
+                        )
+                    ) tmp ORDER BY tmp.updateTime DESC
+                </when>
+                <otherwise> 
+                    
+                    SELECT tmp.type,tmp.account, tmp.serialNumber, tmp.state, tmp.updateTime from (
+                    <if test="income != 1"> 
+                        (SELECT tot.type type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+                        FROM t_order_total tot WHERE mobile_user_id = #{userId} AND (tot.state IN (#{paid}, #{reserved}, #{timeout}, #{withdraw}, #{refund})
+                        AND tot.`serial_number` NOT IN(SELECT serial_number FROM t_order_parking WHERE mobile_user_id=tot.`mobile_user_id` AND pay_channel=#{payChannelCoupon})
+                        <if test="date != '' and date != null">
+                            AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                        </if>
+                        <if test="queryType != -1">
+                            AND tot.type = #{type}
+                        </if>
+                            OR (tot.`state`=1309 AND tot.`account` &gt; 0
+                            <if test="date != '' and date != null">
+                                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                            </if>
+                            <if test="queryType != -1">
+                                AND tot.type = #{type}
+                            </if>
+                            )
+                          )
+                        )
+                        UNION ALL
+                    </if>
+                    
+                    (SELECT CASE WHEN tot.type=#{resereType} THEN 6 WHEN tot.type=#{parkingType} THEN 7 ELSE tot.type END type, tot.update_time updateTime,
+                    tot.account account,
+                    top.state state,
+                    top.serial_number serialNumber
+                    FROM t_parkloc tp
+                    INNER JOIN t_order_parking top ON tp.id = top.parkloc_id INNER JOIN t_order_total tot ON tot.serial_number=top.serial_number
+                    WHERE tp.mobile_user_id = #{userId}
+                    AND top.state in(#{paid}, #{reserved}, #{timeout})
+                    AND top.pay_channel != #{payChannelCoupon}
+                    <if test="queryType != -1">
+                        AND tot.type = #{type}
+                    </if>
+                    <if test="date != null and date != ''">
+                        AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                    </if>
+                    )
+                    ) tmp ORDER BY tmp.updateTime DESC
+                </otherwise>
+            </choose>
+
+        </if>
+        
+        <if test="userType == 2"> 
+            SELECT CASE WHEN tmp.type=#{resereType} THEN 6 WHEN tmp.type=#{parkingType} THEN 7 ELSE tmp.type END type, tmp.account, tmp.serialNumber, tmp.state, tmp.updateTime from (
+            
+            (SELECT tot.type type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+            FROM t_order_total tot WHERE mobile_user_id = #{userId} AND tot.state IN (#{withdraw})
+            <if test="queryType != -1">
+                AND tot.type = #{type}
+            </if>
+            <if test="date != null and date != ''">
+                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+            </if>
+            )
+            UNION ALL
+            
+            ( SELECT tot.type, tot.update_time updateTime, tot.account account, top.state state, top.serial_number serialNumber
+            from t_parklot tpt INNER JOIN t_parkloc tpc ON tpt.id=tpc.parklot_id INNER JOIN t_order_parking top ON top.parkloc_id=tpc.id
+            INNER JOIN t_order_total tot ON top.serial_number=tot.serial_number WHERE tpt.mobile_user_id=#{userId} AND tpt.state=1
+            AND tot.state  in(#{paid}, #{reserved}, #{timeout})
+            AND top.pay_channel != #{payChannelCoupon}
+            <if test="queryType != -1">
+                AND tot.type = #{type}
+            </if>
+            <if test="date != null and date != ''">
+                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+            </if>
+            )
+            ) tmp ORDER BY tmp.updateTime DESC
+        </if>
+        LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    
+    <select id="queryOwnerOrderManageListByCondition" resultType="com.qhieco.response.data.api.OrderManageRespData">
+          /* 作为业主: 查询业主车位为 预约状态的订单-- 过滤掉已停车的订单*/
+            SELECT * from (
+                (SELECT  top.id orderId, tpt.`name` parklotName,  top.create_time createTime, top.state state,tpc.number parklocNumber, (top.`overtime_fee` + top.total_fee) fee
+                from t_order_parking top INNER JOIN t_parkloc tpc ON top.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+                WHERE tpc.mobile_user_id=#{userId} AND top.reserve_id IS NULL AND top.id NOT IN
+                (SELECT topparking.reserve_id from t_order_parking topreserve INNER JOIN t_order_parking topparking ON topreserve.id=topparking.reserve_id
+                WHERE topparking.parkloc_id IN(SELECT id from t_parkloc WHERE mobile_user_id=#{userId})))
+                UNION ALL
+                /* 查询业主车位 进入停车阶段的订单 -- 只查询停车阶段的订单*/
+                (SELECT topparking.id orderId, tpt.`name` parklotName, topreserve.create_time createTime, topparking.state state,tpc.number parklocNumber,
+                if(topparking.total_fee is NULL,topreserve.total_fee, topparking.total_fee + topparking.overtime_fee + topreserve.total_fee) fee
+                FROM t_order_parking topreserve INNER JOIN t_order_parking topparking ON topreserve.id =topparking.reserve_id
+                INNER JOIN t_parkloc tpc ON topparking.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id WHERE tpc.mobile_user_id=#{userId})
+            )tmp ORDER BY tmp.createTime DESC LIMIT #{startPage}, #{pageSize};
+    </select>
+    
+
+    <select id="queryCarOwnerBillListByUserId" resultType="com.qhieco.response.data.api.BillRepData">
+        SELECT tot.type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+        FROM t_order_total tot WHERE mobile_user_id = #{userId} AND (state IN (#{paid}, #{reserved}, #{timeout}, #{refund})
+        AND tot.`serial_number` NOT IN(SELECT serial_number FROM t_order_parking WHERE
+        mobile_user_id=tot.`mobile_user_id` AND pay_channel=#{payChannelCoupon})
+            <if test="date != '' and date != null">
+                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+            </if>
+            <if test="queryType != -1">
+                AND tot.type = #{type}
+            </if>
+                OR (tot.`state`=1309 AND tot.`account` &gt; 0
+                    <if test="date != '' and date != null">
+                        AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                    </if>
+                    <if test="queryType != -1">
+                        AND tot.type = #{type}
+                    </if>
+                    )
+            )
+        ORDER BY tot.update_time DESC
+        LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    
+    <select id="queryOrderUsing" resultType="com.qhieco.response.data.api.OrderUsingRepData">
+
+        SELECT * from (
+          /*查询预约状态的订单-- 过滤掉已停车的订单*/
+          (SELECT  top.id orderId,	top.real_start_time realStartTime, top.state state, tr.start_time startTime,
+                   IF(top.real_start_time IS NOT NULL, (unix_timestamp(now()) * 1000)-top.real_start_time,NULL) stopTime
+           from t_order_parking top LEFT JOIN t_reservation tr ON top.reservation_id = tr.id
+           WHERE top.mobile_user_id=#{userId} AND top.reserve_id IS NULL AND top.state IN(#{unconfirmed}, #{reserved})
+                 AND top.id NOT IN(SELECT topparking.reserve_id from t_order_parking topreserve INNER JOIN t_order_parking topparking
+                   ON topreserve.id=topparking.reserve_id WHERE topparking.mobile_user_id=top.mobile_user_id))
+          UNION ALL
+          /* 查询进入停车阶段的订单 -- 只查询停车阶段的订单*/
+          (SELECT topparking.id orderId,	topparking.real_start_time realStartTime, topparking.state state, tr.start_time startTime,
+                  IF(topparking.real_start_time IS NOT NULL, (unix_timestamp(now()) * 1000)-topparking.real_start_time,NULL) stopTime
+           FROM t_order_parking topreserve INNER JOIN t_order_parking topparking ON topreserve.id =topparking.reserve_id
+               LEFT JOIN t_reservation tr ON topreserve.reservation_id = tr.id WHERE topparking.mobile_user_id=#{userId}
+               AND topparking.state IN(#{used}, #{unpaid}))
+      ) tmp LIMIT 1;
+    </select>
+
+    
+    <select id="queryReserveInfoByPlateNoAdParklotId" resultType="com.qhieco.response.data.api.ScanpayOrderInfo">
+        SELECT top.parkloc_id parklocId, top.id orderId, top.`state` orderState, top.`parklot_id` parklotId,
+        top.`mobile_user_id` mobileUserId FROM t_order_parking top  INNER JOIN t_plate tp ON top.plate_id=tp.id
+        WHERE number=#{plateNo} AND tp.state='1' AND top.state IN(1300, 1301)
+        AND top.`id` NOT IN(SELECT reserve_id FROM t_order_parking WHERE plate_id=top.`plate_id` AND parklot_id=top.`parklot_id` AND reserve_id IS NOT NULL)
+        AND top.`parklot_id`=#{parklotId} ORDER BY top.id DESC LIMIT 1
+    </select>
+<select id="queryInvoiceInfoByOrderId" resultType="java.util.HashMap">
+        select real_fee realFee, mobile_user_id userId from t_order_parking where id=#{orderId}
+    </select>
+    
+    <select id="queryAdminBillListByUserId" resultType="com.qhieco.response.data.api.BillRepData">
+        SELECT CASE WHEN tmp.type=#{resereType} THEN 6 WHEN tmp.type=#{parkingType} THEN 7 ELSE tmp.type END type, tmp.account,
+          tmp.serialNumber, tmp.state, tmp.updateTime from (
+            
+            (SELECT tot.type type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+            FROM t_order_total tot WHERE mobile_user_id = #{userId} AND tot.state IN (#{withdraw})
+            <if test="queryType != -1">
+                AND tot.type = #{type}
+            </if>
+            <if test="date != null and date != ''">
+                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+            </if>
+            )
+            UNION ALL
+            
+            ( SELECT tot.type, tot.update_time updateTime, top.manage_income account, top.state state, top.serial_number serialNumber
+                from t_parklot tpt INNER JOIN t_parkloc tpc ON tpt.id=tpc.parklot_id INNER JOIN t_order_parking top ON top.parkloc_id=tpc.id
+                INNER JOIN t_order_total tot ON top.serial_number=tot.serial_number WHERE tpt.mobile_user_id=#{userId} AND tpt.state=1
+                AND tpc.mobile_user_id = #{userId}
+                AND tot.state  in(#{paid}, #{reserved}, #{timeout}, 1309)
+                AND top.manage_income &gt; 0
+                
+                <if test="queryType != -1">
+                    AND tot.type = #{type}
+                </if>
+                <if test="date != null and date != ''">
+                    AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                </if>
+                )
+        ) tmp ORDER BY tmp.updateTime DESC
+        LIMIT #{startPage}, #{pageSize};
+    </select>
+    
+
+    <select id="queryReserveCouponInfoByParkingOrderId" resultType="java.util.HashMap">
+        SELECT tc.coupon_code reserveCouponCode, tc.used_money reserveCouponFee from t_order_parking topreserve INNER JOIN b_coupon_order_parking bcop ON topreserve.id=bcop.order_id
+            INNER JOIN t_coupon tc ON tc.id=bcop.coupon_id
+        WHERE topreserve.id = (SELECT reserve_id from t_order_parking WHERE id=#{orderId})  AND bcop.`state`=#{valid};
+    </select>
+
+    <select id="queryManagerOrderManageListByCondition" resultType="com.qhieco.response.data.api.OrderManageRespData">
+        SELECT * from (
+              (SELECT  top.id orderId, tpt.`name` parklotName,  top.create_time createTime, top.state state,tpc.number parklocNumber, (top.`overtime_fee` + top.total_fee) fee
+               from t_order_parking top INNER JOIN t_parkloc tpc ON top.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+               WHERE tpt.mobile_user_id=#{userId} AND top.reserve_id IS NULL
+                    AND tpc.mobile_user_id=#{userId}
+                    AND top.id NOT IN(SELECT topparking.reserve_id from t_order_parking topreserve
+                   INNER JOIN t_order_parking topparking ON topreserve.id=topparking.reserve_id
+               WHERE topparking.parklot_id IN(SELECT id from t_parklot WHERE mobile_user_id=#{userId})))
+              UNION ALL
+              /* 查询管理员车场 进入停车阶段的订单 -- 只查询停车阶段的订单*/
+              (SELECT topparking.id orderId, tpt.`name` parklotName, topreserve.create_time createTime, topparking.state state,tpc.number parklocNumber,
+                      if(topparking.total_fee is NULL,topreserve.total_fee, topparking.total_fee + topparking.overtime_fee + topreserve.total_fee) fee
+               FROM t_order_parking topreserve INNER JOIN t_order_parking topparking ON topreserve.id =topparking.reserve_id
+                   INNER JOIN t_parkloc tpc ON topparking.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+                WHERE tpt.mobile_user_id=#{userId} AND tpc.mobile_user_id=#{userId})
+          )tmp ORDER BY tmp.createTime DESC LIMIT #{startPage}, #{pageSize};
+    </select>
+    
+    <select id="queryParkingInfoByPlateNoAdParklotId" resultType="com.qhieco.response.data.api.ScanpayOrderInfo">
+        SELECT top.parkloc_id parklocId, top.id orderId, top.`state` orderState, top.`parklot_id` parklotId,
+        top.`mobile_user_id` mobileUserId FROM t_order_parking top  INNER JOIN t_plate tp ON top.plate_id=tp.id
+        WHERE number=#{plateNo} AND tp.state='1' AND top.state IN(1302, 1303)
+        AND top.`parklot_id`=#{parklotId} ORDER BY top.id DESC LIMIT 1
+    </select>
+    <select id="queryOwnerBillListByUserId" resultType="com.qhieco.response.data.api.BillRepData">
+        <choose>
+            <when test="queryType == 0 or queryType == 1 or queryType == 2"> 
+                SELECT tmp.type,tmp.account, tmp.serialNumber, tmp.state, tmp.updateTime from (
+                    (SELECT tot.type type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+                    FROM t_order_total tot WHERE mobile_user_id = #{userId} AND (tot.state IN (#{paid}, #{reserved}, #{timeout}, #{refund})
+                    AND tot.`serial_number` NOT IN(SELECT serial_number FROM t_order_parking WHERE mobile_user_id=tot.`mobile_user_id` AND pay_channel=#{payChannelCoupon})
+                    AND tot.`account` &gt; 0
+                        <if test="date != '' and date != null">
+                            AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                        </if>
+                        <if test="queryType != -1">
+                            AND tot.type = #{type}
+                        </if>
+                        OR (tot.`state`=1309 AND tot.`account` &gt; 0
+                            <if test="date != '' and date != null">
+                                AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                            </if>
+                            <if test="queryType != -1">
+                                AND tot.type = #{type}
+                            </if>
+                            )
+                        )
+                  )
+                ) tmp ORDER BY tmp.updateTime DESC
+            </when>
+            <otherwise> 
+                
+                SELECT tmp.type,tmp.account, tmp.serialNumber, tmp.state, tmp.updateTime from (
+                <if test="income != 1"> 
+                    (SELECT tot.type type, tot.update_time updateTime, tot.account account, tot.state state, tot.serial_number serialNumber
+                    FROM t_order_total tot WHERE mobile_user_id = #{userId} AND (tot.state IN (#{paid}, #{reserved}, #{timeout}, #{withdraw}, #{refund})
+                    AND tot.`serial_number` NOT IN(SELECT serial_number FROM t_order_parking WHERE mobile_user_id=tot.`mobile_user_id` AND pay_channel=#{payChannelCoupon})
+                    AND tot.`account` &gt; 0
+                    <if test="date != '' and date != null">
+                        AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                    </if>
+                    <if test="queryType != -1">
+                        AND tot.type = #{type}
+                    </if>
+                    OR (tot.`state`=1309 AND tot.`account` &gt; 0
+                    <if test="date != '' and date != null">
+                        AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                    </if>
+                    <if test="queryType != -1">
+                        AND tot.type = #{type}
+                    </if>
+                    )
+                    )
+                    )
+                    UNION ALL
+                </if>
+                
+                ( SELECT CASE WHEN tot.type=#{resereType} THEN 6 WHEN tot.type=#{parkingType} THEN 7 ELSE tot.type END type, tot.update_time updateTime,
+                  top.owner_income account, top.state state,  top.serial_number serialNumber
+                    FROM t_parkloc tp
+                    INNER JOIN t_order_parking top ON tp.id = top.parkloc_id INNER JOIN t_order_total tot ON tot.serial_number=top.serial_number
+                    WHERE tp.mobile_user_id = #{userId}
+                    AND top.state in(#{paid}, #{reserved}, #{timeout}, 1309)
+                    AND top.owner_income &gt; 0
+                      
+                    <if test="queryType != -1">
+                        AND tot.type = #{type}
+                    </if>
+                    <if test="date != null and date != ''">
+                        AND date_format(FROM_UNIXTIME(tot.update_time/1000), '%Y%m')= #{date}
+                    </if>
+                    )
+                ) tmp ORDER BY tmp.updateTime DESC
+            </otherwise>
+        </choose>
+        LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    
+    <select id="queryReserveOrderList" resultType="com.qhieco.time.ReserveOrderInfo">
+       SELECT topreserve.id orderId, (SELECT ts.id from t_reservation trv INNER JOIN t_share ts ON ts.id=trv.share_id
+            WHERE topreserve.reservation_id=trv.id) shareId,
+            topreserve.platform_income platformIncome, topreserve.owner_income ownerIncome, topreserve.manage_income manageIncome
+        from t_order_parking topreserve INNER JOIN t_reservation tr ON tr.id=topreserve.reservation_id
+				WHERE reserve_id IS NULL AND topreserve.id NOT IN(SELECT reserve_id from t_order_parking
+        WHERE reserve_id IS NOT NULL) AND topreserve.state=#{reserve} AND UNIX_TIMESTAMP(NOW()) * 1000 - tr.start_time &gt;=
+          if((SELECT bpp.qhvalue from b_parklot_params bpp WHERE bpp.parklot_id = topreserve.parklot_id AND bpp.state=#{valid} AND bpp.qhkey=#{maxDelayTimeKey}) is NULL,
+          0, (SELECT bpp.qhvalue FROM b_parklot_params bpp WHERE bpp.parklot_id = topreserve.parklot_id AND bpp.state=1 AND bpp.qhkey=#{maxDelayTimeKey}))*60 * 1000;
+    </select>
+
+    <select id="queryBillDetailBySerialNumber" resultType="com.qhieco.response.data.api.BillDetailRepData">
+        
+        SELECT #{type} type,
+        <if test="type == 0 || type == 1">
+                state,
+                pay_time billTime,
+                real_fee fee,
+                serial_number serialNumber,
+                trade_no tradeNo,
+                pay_channel channel
+                FROM
+                t_order_parking
+                WHERE
+                serial_number = #{serialNumber};
+        </if>
+        <if test="type == 2">
+                state,
+                update_time billTime,
+                fee fee,
+                serial_number serialNumber,
+                trade_no tradeNo,
+                channel channel
+                FROM
+                t_order_refund
+                WHERE
+                serial_number = #{serialNumber}
+        </if>
+        <if test="type == 3">
+
+        </if>
+        <if test="type == 4">
+            tow.state,
+            tow.complete_time billTime,
+            tow.balance fee,
+            tow.serial_number serialNumber,
+            tow.transter_number tradeNo,
+            tbc.bank bankName,
+            tbc.bank_number bankNumber
+            FROM t_order_withdraw tow
+            INNER JOIN t_bank_card tbc ON tow.bank_card_id = tbc.id
+            WHERE tow.serial_number = #{serialNumber};
+        </if>
+        <if test="type == 5">
+        </if>
+        
+        <if test="type == 6 || type == 7">
+            state,
+            pay_time billTime,
+            <choose>
+                <when test="userType == 1"> owner_income fee ,</when>
+                <when test="userType == 2"> manage_income fee ,</when>
+                <otherwise>real_fee fee,</otherwise>
+            </choose>
+            serial_number serialNumber,
+            trade_no tradeNo,
+            pay_channel channel
+            FROM
+            t_order_parking
+            WHERE
+            serial_number = #{serialNumber};
+        </if>
+    </select>
+
+    <select id="queryInvoiceOrderListByCondition" resultType="com.qhieco.response.data.api.InvoiceOrderRepData">
+        SELECT top.id orderId,
+        top.pay_time updateTime,
+        top.real_fee fee,
+        tpt.`name` estateName,
+        top.state state
+        FROM t_order_parking top INNER JOIN t_parkloc tpc ON tpc.id = top.parkloc_id
+        INNER JOIN t_parklot tpt ON tpt.id = tpc.parklot_id
+        AND top.invoice_state = #{invoiceState}
+        AND top.mobile_user_id=#{userId}
+        AND top.real_fee &gt; 0
+        AND top.pay_time &gt; UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 YEAR)) * 1000
+        ORDER BY top.pay_time DESC
+        LIMIT #{startPage}, #{pageSize}
+    </select>
+    
+    <select id="queryAllUnconfirmedOrderInfo" resultType="com.qhieco.time.UnconfirmedOrderInfo">
+        SELECT top.id orderId, (SELECT ts.id from t_reservation trv INNER JOIN t_share ts ON ts.id=trv.share_id WHERE top.reservation_id=trv.id) shareId
+        FROM t_order_parking top WHERE top.state=#{unconform} AND UNIX_TIMESTAMP(NOW())* 1000 - top.create_time &gt;= #{autoCancelReservedTime};
+    </select>
+
+    <select id="queryReserveOrderByOrderId" resultType="com.qhieco.response.data.api.ReserveOrderDetailRespData">
+        SELECT top.id orderId, tpt.`name` parklotName,tpc.number parklocNumber, tpt.address address,tpt.kind  parklotKind,
+               tpt.type type, trv.start_time startTime, top.total_fee totalFee,
+               trv.end_time endTime, top.serial_number serialNumber, top.state state, top.create_time createTime,
+               IF(tpt.navi_lat is NULL, tpt.lat,tpt.navi_lat) lat, IF(tpt.navi_lng IS NULL, tpt.lng, tpt.navi_lng) lng,
+               (SELECT tp.number FROM t_plate tp WHERE top.plate_id=tp.id ) plateNo
+        FROM t_order_parking top INNER JOIN t_parkloc tpc ON top.parkloc_id=tpc.id
+        INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+        INNER JOIN t_reservation trv ON top.reservation_id=trv.id WHERE top.id=#{orderId};
+    </select>
+
+    <select id="queryParkingOrderByOrderId" resultType="com.qhieco.response.data.api.ReserveOrderDetailRespData">
+        SELECT topparking.id orderId,tpt.id parklotId, tpt.`name` parklotName, tpc.number parklocNumber, tpt.address address,
+               tpt.kind  parklotKind, tpt.type type,
+               trv.start_time startTime, trv.end_time endTime, topparking.serial_number serialNumber, topparking.state state,
+               (topparking.total_fee+topreserve.total_fee) totalFee, topreserve.create_time createTime,  topparking.real_start_time enterTime,
+               topparking.real_end_time leaveTime, topparking.overtime overTime, topreserve.total_fee reserveFee, topparking.total_fee parkingFee,
+               topparking.overtime_fee overTimeFee,topparking.pay_channel payChannelParking, topreserve.pay_channel payChannelReserve,
+               tc.used_money parkingCouponFee, topparking.trade_no parkingTradeNo,topreserve.trade_no reserveTradeNo,  tc.coupon_code parkingCouponCode,
+               (SELECT tp.number FROM t_plate tp WHERE topparking.plate_id=tp.id ) plateNo
+        FROM t_order_parking topreserve LEFT JOIN t_order_parking topparking ON topreserve.id=topparking.reserve_id
+            LEFT JOIN t_parkloc tpc ON topparking.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+            LEFT JOIN t_reservation trv ON topparking.reservation_id=trv.id LEFT JOIN b_coupon_order_parking bcop ON topparking.id=bcop.order_id
+            LEFT JOIN t_coupon tc ON bcop.coupon_id=tc.id WHERE topparking.id=#{orderId} LIMIT 1;
+    </select>
+    
+    <select id="queryCouponByOrderId" resultType="com.qhieco.commonentity.Coupon">
+        SELECT tc.coupon_code couponCode, tc.used_money usedMoney
+        FROM b_coupon_order_parking bcop INNER JOIN t_coupon tc
+        ON bcop.coupon_id = tc.id
+        WHERE bcop.order_id = #{orderId}
+        AND bcop.state = 1
+        AND tc.state = 1900
+    </select>
+
+    <select id="queryReserveOrderListByUserId" resultType="com.qhieco.response.data.api.ReserveOrderRespData">
+        SELECT * from (
+        /*查询预约状态的订单-- 过滤掉已停车的订单*/
+        (SELECT  top.id orderId, tpt.`name` parklotName,  top.create_time createTime, top.state state, top.total_fee totalFee
+        from t_order_parking top INNER JOIN t_parkloc tpc ON top.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+        WHERE top.mobile_user_id=#{userId} AND top.reserve_id IS NULL
+        AND top.id NOT IN(SELECT topparking.reserve_id from t_order_parking topreserve INNER JOIN t_order_parking topparking
+        ON topreserve.id=topparking.reserve_id WHERE topparking.mobile_user_id=#{userId}))
+        UNION ALL
+         /* 查询进入停车阶段的订单 -- 只查询停车阶段的订单*/
+        (SELECT topparking.id orderId, tpt.`name` parklotName, topreserve.create_time createTime, topparking.state state,
+          if(topparking.total_fee is NULL,topreserve.total_fee, topparking.total_fee+topreserve.total_fee+IFNULL(topparking.overtime_fee, 0)) totalFee
+         FROM t_order_parking topreserve INNER JOIN t_order_parking topparking ON topreserve.id =topparking.reserve_id
+            INNER JOIN t_parkloc tpc ON topparking.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+          WHERE topparking.mobile_user_id=#{userId})
+        ) tmp ORDER BY tmp.createTime DESC LIMIT #{startPage}, #{pageSize}
+    </select>
+
+    <select id="queryOrderManageDetailByOrderId" resultType="com.qhieco.response.data.api.OrderManageDetailRespData">
+        SELECT top.id orderId, tpt.`name` parklotName, tpc.number parklocNumber, tpt.address address, top.state state, top.serial_number serialNumber,
+        tr.start_time startTime, tr.end_time endTime, top.real_start_time enterTime, top.real_end_time leaveTime
+        <if test="userType == 1">
+            ,top.owner_income + IF(top.reserve_id IS NULL, 0, (SELECT owner_income FROM t_order_parking WHERE id=top.reserve_id))  fee
+        </if>
+        <if test="userType == 2">
+            ,top.manage_income + IF(top.reserve_id IS NULL, 0, (SELECT manage_income FROM t_order_parking WHERE id=top.reserve_id)) fee
+        </if>
+        from t_order_parking top INNER JOIN t_parkloc tpc ON top.parkloc_id=tpc.id INNER JOIN t_parklot tpt ON tpt.id=tpc.parklot_id
+        INNER JOIN t_reservation tr ON top.reservation_id=tr.id WHERE top.id=#{orderId}
+    </select>
+
+    <select id="queryOrderMessageInfo" parameterType="Integer" resultType="com.qhieco.time.OrderMessageInfo">
+        SELECT op.mobile_user_id as userId,uei.jpush_reg_id as jpushId,pt.name as parklotName,pc.number as parklocNumber,r.start_time as startTime,r.end_time as endTime
+            FROM t_order_parking op ,t_user_extra_info uei ,t_parklot pt,t_parkloc pc,t_reservation r
+                WHERE op.mobile_user_id = uei.mobile_user_id and op.parklot_id = pt.id and op.parkloc_id = pc.id and op.reservation_id = r.id and op.id = #{orderId};
+    </select>
+
+    </mapper>

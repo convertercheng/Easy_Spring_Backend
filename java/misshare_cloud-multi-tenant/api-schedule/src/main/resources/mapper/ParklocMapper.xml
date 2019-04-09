@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ParklocMapper">
+
+    <select id="queryTimeoutShareList" resultType="com.qhieco.time.ParklocShare">
+        <![CDATA[
+          SELECT DISTINCT ts.id shareId, ts.`parkloc_id` parklocId, FROM_UNIXTIME(ts.`end_time`/1000) endTime FROM t_share ts
+            LEFT JOIN t_reservation trv ON trv.`share_id`=ts.`id`
+            LEFT JOIN t_order_parking top ON top.`reservation_id`=trv.`id`
+            AND  top.`state` NOT IN (#{sysCanceled},#{timeout},#{userCanceled},#{custServiceCanceled})
+            WHERE  ts.`end_time`<=UNIX_TIMESTAMP(NOW())*1000 AND ts.`state`<>#{invalid}
+        ]]>
+    </select>
+</mapper>

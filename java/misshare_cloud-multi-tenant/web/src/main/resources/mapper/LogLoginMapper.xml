@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.LogLoginMapper">
+
+    <sql id="querySql">
+        <if test="phone != '' and phone != null">
+            AND tum.phone like concat('%', #{phone}, '%')
+        </if>
+        <if test="phoneModel != ''and phoneModel != null">
+            AND tlom.source_model like concat('%', #{phoneModel}, '%')
+        </if>
+        <if test="loginStartTime != '' and loginStartTime != null and loginEndTime != '' and loginEndTime != null">
+            AND tlom.operate_time BETWEEN #{loginStartTime} AND #{loginEndTime}
+        </if>
+    </sql>
+
+    <select id="queryLogLoginListByCondition" resultType="com.qhieco.response.data.web.LogLoginData">
+      SELECT tlom.id logId, tum.phone phone, tlom.source_ip ip, tlom.`operate_time` loginTime, tlom.source_model phoneModel
+         FROM t_log_operation_mobile tlom INNER JOIN t_user_mobile tum ON tum.id=tlom.`mobile_user_id`
+            WHERE 1=1
+            AND tlom.type=#{logLoginType}
+        <include refid="querySql"/>
+         ORDER BY tlom.`operate_time` DESC  LIMIT #{startPage}, #{pageSize};
+    </select>
+
+    <select id="queryLogLoginListExcel" resultType="com.qhieco.response.data.web.LogLoginData">
+        SELECT tlom.id logId, tum.phone phone, tlom.source_ip ip, tlom.`operate_time` loginTime, tlom.source_model phoneModel
+        FROM t_log_operation_mobile tlom INNER JOIN t_user_mobile tum ON tum.id=tlom.`mobile_user_id`
+        WHERE 1=1
+        AND tlom.type=#{logLoginType}
+        <include refid="querySql"/>
+        ORDER BY tlom.`operate_time` DESC
+        LIMIT 5000;
+    </select>
+
+    <select id="queryLogLoginCount" resultType="java.lang.Integer">
+      SELECT count(tlom.id)
+         FROM t_log_operation_mobile tlom INNER JOIN t_user_mobile tum ON tum.id=tlom.`mobile_user_id`
+            WHERE 1=1
+            AND tlom.type=#{logLoginType}
+        <include refid="querySql"/>
+    </select>
+
+</mapper>

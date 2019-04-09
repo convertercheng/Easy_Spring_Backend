@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.CouponMapper">
+<select id="queryCountUserCouponByUserId" resultType="java.lang.Integer">
+      
+            SELECT count(1)
+            from   t_coupon tc where tc.mobile_user_id=#{userId}
+            AND tc.state=#{state}
+            AND (tc.end_time is null OR (tc.begin_time &lt;=UNIX_TIMESTAMP(NOW()) * 1000 AND tc.end_time &gt;= UNIX_TIMESTAMP(now()) * 1000))
+        
+    </select>
+<select id="queryUserCouponListByUserId" resultType="com.qhieco.response.data.api.UserCouponRepData">
+        
+            SELECT tmp.userCouponId ,  tmp.couponLimit , tmp.endTime , tmp.couponCode , tmp.counponType  from (
+                SELECT tc.id userCouponId,  tc.coupon_limit couponLimit, tc.end_time endTime,tc.coupon_code couponCode, tc.coupon_type counponType, tc.end_time, tc.create_time
+                        FROM t_coupon tc WHERE tc.state IN(#{unclaimed}, #{couponConvertibility}) AND tc.`mobile_user_id`=#{userId}
+                        AND (tc.end_time IS NULL OR (tc.begin_time &lt;=UNIX_TIMESTAMP(NOW()) * 1000 AND tc.end_time &gt;= UNIX_TIMESTAMP(NOW()) * 1000))
+            UNION
+                SELECT tc.id userCouponId,  tc.coupon_limit couponLimit, tc.end_time endTime,tc.coupon_code couponCode, tc.coupon_type counponType, tc.end_time, tc.create_time
+                        FROM t_coupon tc WHERE tc.`mobile_user_id`=#{userId}
+                          AND tc.id IN (SELECT bcop.coupon_id from t_order_parking top INNER JOIN b_coupon_order_parking bcop on bcop.order_id=top.id where
+                          top.state IN(#{unconfirmed},#{unpaid}))
+                          AND (tc.end_time IS NULL OR (tc.begin_time &lt;=UNIX_TIMESTAMP(NOW()) * 1000 AND tc.end_time &gt;= UNIX_TIMESTAMP(NOW()) * 1000))
+            ) tmp
+            ORDER BY tmp.end_time IS NULL , tmp.end_time ASC, tmp.create_time DESC
+            LIMIT #{startPage}, #{pageSize};
+        
+    </select>
+
+    </mapper>

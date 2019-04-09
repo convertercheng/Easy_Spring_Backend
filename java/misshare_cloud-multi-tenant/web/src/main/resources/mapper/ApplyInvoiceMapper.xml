@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.ApplyInvoiceMapper">
+    <select id="applyPage" resultType="com.qhieco.commonentity.ApplyInvoice"
+            parameterType="com.qhieco.request.web.ApplyInvoiceRequest">
+        SELECT
+        <include refid="resultFields"/>
+        FROM
+        <include refid="tableList"/>
+        <include refid="applyInvoiceWhere"/>
+        ORDER BY ai.id DESC
+        LIMIT #{start},#{length}
+    </select>
+    <select id="applyCount" resultType="java.lang.Integer"
+            parameterType="com.qhieco.request.web.ApplyInvoiceRequest">
+        SELECT count(ai.id) FROM
+        <include refid="tableList"/>
+        <include refid="applyInvoiceWhere"/>
+    </select>
+    <select id="orderInvoiceExcel" resultType="com.qhieco.commonentity.ApplyInvoice"
+            parameterType="com.qhieco.request.web.ApplyInvoiceRequest">
+        SELECT
+        <include refid="resultFields"/>
+        FROM
+        <include refid="tableList"/>
+        <include refid="applyInvoiceWhere"/>
+        ORDER BY ai.id DESC
+    </select>
+    <sql id="resultFields">
+        ai.id,
+        um.phone,
+        ai.taxpayer_id taxpayerId,
+        ai.title,
+        ai.fee,
+        ai.type,
+        ai.email,
+        ai.apply_time applyTime,
+        ai.state
+    </sql>
+    <sql id="tableList">
+        t_apply_invoice ai
+        LEFT JOIN t_user_mobile um on um.id = ai.mobile_user_id
+    </sql>
+    <sql id="applyInvoiceWhere">
+        <where>
+            <if test="phone != null and phone !=''">
+                um.phone like concat(concat('%',#{phone}),'%')
+            </if>
+            <if test="title != null and title !=''">
+                AND ai.title like concat('%',#{title},'%')
+            </if>
+            <if test="startApplyTime!=null">
+                AND <![CDATA[ ai.apply_time>=#{startApplyTime} ]]>
+            </if>
+            <if test="endApplyTime!=null">
+                AND <![CDATA[ ai.apply_time<=#{endApplyTime} ]]>
+            </if>
+        </where>
+    </sql>
+</mapper>

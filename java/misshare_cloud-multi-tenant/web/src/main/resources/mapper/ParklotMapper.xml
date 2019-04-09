@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webmapper.ParklotMapper">
+
+
+    <select id="queryParklotReserveFeeRule" resultType="com.qhieco.commonentity.FeeRuleReserve">
+         SELECT tfrr.`name`,tfrr.id, tfrr.fee fee,
+         tfrr.finish_time finishTime FROM b_parklot_fee_rule_reserve bpfrr
+         INNER JOIN t_fee_rule_reserve tfrr ON tfrr.id=bpfrr.fee_rule_id WHERE bpfrr.parklot_id=#{parklotId}
+         AND tfrr.state=#{state} ORDER BY tfrr.finish_time ASC
+    </select>
+
+
+    <select id="queryParklotFeeRuleParking" resultType="com.qhieco.commonentity.FeeRuleParking">
+         SELECT t1.id,t1.`name`,t1.`first_hour_fee` firstHourFee,t1.`other_time_fee` otherTimeFee,
+         t1.`free_use_time` freeUseTime,t1.`max_fee` maxFee,t1.`other_time_fee` otherTimeFee,t1.`weekday`,
+         t1.`over_time_fee` overTimeFee
+         FROM t_fee_rule_parking t1
+         INNER JOIN b_parklot_fee_rule_parking t2 ON t1.`id`=t2.`fee_rule_id`
+         WHERE t2.`parklot_id`=#{parklotId} AND t2.`state`=#{state}
+         ORDER by t1.id DESC
+    </select>
+    
+    <select id="queryParklotLnglatDuplicateByCondition" resultType="java.lang.Integer">
+        SELECT count(1) from t_parklot tpt where tpt.lng=#{lng} AND tpt.lat=#{lat}
+        <if test="parklotId != null and parklotId != ''">
+            AND id !=#{parklotId}
+        </if>
+    </select>
+    
+</mapper>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ShareMapper">
+<resultMap id="shareTimeOutMap" type="com.qhieco.time.ShareTimeOutInfo">
+        <result column="parklotId" property="parklotId" />
+        <collection ofType="com.qhieco.time.ParklocShare" property="parklocShareList">
+            <id column="shareId" property="shareId" />
+            <result column="parklocId" property="parklocId" />
+            <result column="endTime" property="endTime" />
+        </collection>
+    </resultMap>
+    
+    <select id="queryReserveTimeListByParklocIdAndCondition" parameterType="java.util.HashMap" resultType="com.qhieco.response.data.api.ReserveTimeData">
+        
+                SELECT ts.id, ts.start_time startTime, ts.end_time endTime,tpc.id parklocId
+                FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                        WHERE tpc.id=#{parklocId} AND tpc.state =1101 and ts.state=1
+                    AND (
+                        ((ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval}
+                         AND ts.start_time&lt;=UNIX_TIMESTAMP(NOW()) *1000)
+                    OR
+                        ((ts.start_time - UNIX_TIMESTAMP(NOW()) *1000) &lt;= #{advanceReservationTime} * 60 * 1000
+                            AND ts.start_time &gt;=UNIX_TIMESTAMP(NOW())*1000)
+                    )
+                ORDER BY ts.start_time ASC, ts.end_time ASC;
+        
+    </select>
+
+    <insert id="insertBatch">
+      insert into t_share(parkloc_id, publish_id, start_time, end_time, state) VALUES
+      <foreach collection="shareList" index="index" item="share" separator=",">
+          (#{share.parklocId}, #{share.publishId}, #{share.startTime}, #{share.endTime}, #{share.state})
+      </foreach>
+    </insert>
+    
+    <select id="queryReserveTimeListByCondition" parameterType="java.util.HashMap" resultType="com.qhieco.response.data.api.ReserveTimeData">
+        
+                SELECT ts.id, ts.start_time startTime, ts.end_time endTime,tpc.id parklocId
+                FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                        INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+                        WHERE tpt.id=#{parklotId} AND tpc.state =1101 and ts.state=1
+                    AND (
+                        ((ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval}
+                         AND ts.start_time&lt;=UNIX_TIMESTAMP(NOW()) *1000)
+                    OR
+                        ((ts.start_time - UNIX_TIMESTAMP(NOW()) *1000) &lt;= #{advanceReservationTime} * 60 * 1000
+                            AND ts.start_time &gt;=UNIX_TIMESTAMP(NOW())*1000
+                            AND (ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval})
+                    )
+                ORDER BY ts.start_time ASC, ts.end_time ASC;
+        
+    </select>
+
+    <update id="updateBatchShareStateByIds">
+        update t_share set state=#{state} where id IN
+        <foreach close=")" collection="parklocShareList" index="index" item="item" open="(" separator=",">
+          #{item.shareId}
+        </foreach>
+    </update>
+<select id="queryReserveTimeListByParklotId" parameterType="java.util.HashMap" resultMap="reserveTimeMap">
+      
+        SELECT ts.id, ts.start_time startTime, ts.end_time endTime, tpc.id parklocId,tpc.number parklocNumber
+                FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                        INNER JOIN t_parklot tpt ON tpc.parklot_id=tpt.id
+                        WHERE tpt.id=#{parklotId} AND tpc.state=1101 and ts.state=1
+                    AND (
+                        ((ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval}
+                         AND ts.start_time&lt;=UNIX_TIMESTAMP(NOW()) *1000)
+                    OR
+                        ((ts.start_time - UNIX_TIMESTAMP(NOW()) *1000) &lt;= #{advanceReservationTime} * 60 * 1000
+                            AND ts.start_time &gt;=UNIX_TIMESTAMP(NOW())*1000
+                            AND (ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval})
+                    )
+                ORDER BY ts.start_time ASC, ts.end_time ASC;
+        
+    </select>
+    
+    <resultMap id="reserveTimeMap" type="com.qhieco.response.data.api.ParklocShareRepData">
+        <id column="parklocId" property="parklocId" />
+        <result column="parklocNumber" property="parklocNumber" />
+
+        <collection ofType="com.qhieco.response.data.api.ReserveTimeData" property="shares">
+            <id column="id" property="id" />
+            <result column="startTime" property="startTime" />
+            <result column="endTime" property="endTime" />
+        </collection>
+    </resultMap>
+    
+    
+    <select id="queryReserveTimeListByDistrictId" parameterType="java.util.HashMap" resultType="com.qhieco.response.data.api.ReserveTimeData">
+        
+                SELECT ts.id, ts.start_time startTime, ts.end_time endTime,tpc.id parklocId
+                FROM t_share ts INNER JOIN t_parkloc tpc ON ts.parkloc_id=tpc.id
+                        WHERE tpc.`parklot_district_id`=#{districtId} AND tpc.state =1101 and ts.state=1
+                    AND (
+                        ((ts.end_time - UNIX_TIMESTAMP(NOW())*1000) &gt; #{timeInterval}
+                         AND ts.start_time&lt;=UNIX_TIMESTAMP(NOW()) *1000)
+                    OR
+                        ((ts.start_time - UNIX_TIMESTAMP(NOW()) *1000) &lt;= #{advanceReservationTime} * 60 * 1000
+                            AND ts.start_time &gt;=UNIX_TIMESTAMP(NOW())*1000)
+                    )
+                ORDER BY ts.start_time ASC, ts.end_time ASC;
+        
+    </select>
+
+    <select id="queryShareTimeOutList" resultMap="shareTimeOutMap">
+        
+       SELECT DISTINCT ts.`parkloc_id` parklocId, ts.id shareId,  FROM_UNIXTIME(ts.end_time/1000) endTime, tpc.parklot_id parklotId
+        FROM t_share ts INNER JOIN t_parkloc tpc ON tpc.id=ts.parkloc_id
+        WHERE ts.end_time - UNIX_TIMESTAMP(NOW())*1000 &lt;= #{timeInterval}
+         AND UNIX_TIMESTAMP(NOW()) * 1000 BETWEEN ts.`start_time` AND ts.`end_time` AND ts.`state`=1
+          
+    </select>
+
+
+</mapper>

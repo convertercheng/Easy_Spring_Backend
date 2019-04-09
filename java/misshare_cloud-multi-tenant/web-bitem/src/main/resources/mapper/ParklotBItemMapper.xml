@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webbitemmapper.ParklotBItemMapper">
+
+    <!-- 根据条件获取所有可用的小区列表 -->
+    <select id="findAllUsableParklot" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT lot.id,lot.name,lot.address FROM t_parklot lot
+          WHERE 1=1
+            AND lot.id NOT IN(
+                                SELECT parklot_id FROM bi_parklot_relation WHERE user_id !=#{userId}
+                              )
+        <if test="name!=null and name!='' ">
+            AND lot.name LIKE concat(concat('%',#{name}),'%')
+        </if>
+    </select>
+
+    <!-- 获取分配小区的所有列表 -->
+    <select id="findByUserAllParklot" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT lot.id,lot.name,lot.address FROM t_parklot lot
+          WHERE 1=1
+            AND lot.id IN(
+                                SELECT parklot_id FROM bi_parklot_relation WHERE user_id =#{userId}
+                              )
+        <if test="name!=null and name!='' ">
+            AND lot.name LIKE concat(concat('%',#{name}),'%')
+        </if>
+    </select>
+
+    <!-- 获取小区和停车场管理员信息_分页 -->
+    <select id="findParklotAdminByPage" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT lot.id,lot.name,lot.address,um.id AS adminId,um.name AS adminName, um.phone AS adminPhone
+            FROM t_parklot lot
+            LEFT JOIN t_user_mobile um on lot.mobile_user_id = um.id
+          WHERE 1=1
+            AND lot.id IN(
+                                SELECT parklot_id FROM bi_parklot_relation WHERE user_id =#{userId}
+                              )
+        <!-- 小区名称 -->
+        <if test="name!=null and name!='' ">
+            AND lot.name LIKE concat(concat('%',#{name}),'%')
+        </if>
+        <!-- 管理员名称 -->
+        <if test="adminName!=null and adminName!='' ">
+            AND um.name LIKE concat(concat('%',#{adminName}),'%')
+        </if>
+        <!-- 管理员电话号码 -->
+        <if test="adminPhone!=null and adminPhone!='' ">
+            AND um.phone LIKE concat(concat('%',#{adminPhone}),'%')
+        </if>
+        ORDER BY lot.id DESC
+    </select>
+
+    <!-- 获取小区和停车场管理员信息_总数 -->
+    <select id="pageAdminUserTotalCount" parameterType="com.qhieco.request.web.ParklotRequest" resultType="java.lang.Integer">
+        SELECT count(*) FROM t_parklot lot
+            LEFT JOIN t_user_mobile um on lot.mobile_user_id = um.id
+          WHERE 1=1
+            AND lot.id IN(
+                                SELECT parklot_id FROM bi_parklot_relation WHERE user_id =#{userId}
+                              )
+        <!-- 小区名称 -->
+        <if test="name!=null and name!='' ">
+            AND lot.name LIKE concat(concat('%',#{name}),'%')
+        </if>
+        <!-- 管理员名称 -->
+        <if test="adminName!=null and adminName!='' ">
+            AND um.name LIKE concat(concat('%',#{adminName}),'%')
+        </if>
+        <!-- 管理员电话号码 -->
+        <if test="adminPhone!=null and adminPhone!='' ">
+            AND um.phone LIKE concat(concat('%',#{adminPhone}),'%')
+        </if>
+    </select>
+
+    <!-- 根据管理员ID清空小区所属用户 -->
+    <delete id="delRelationByUserId" parameterType="java.lang.Integer">
+        delete from bi_parklot_relation where user_id=#{userId}
+    </delete>
+
+    <!-- 更新小区所属用户 -->
+    <insert id="insert" parameterType="com.qhieco.request.web.ParklotRequest">
+        insert into bi_parklot_relation(parklot_id,user_id) value(#{id},#{userId})
+    </insert>
+
+    <!-- 获取小区和小区管理员详细 -->
+    <select id="findAdminUserDetailed" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT lot.id,lot.name, um.id AS adminId, um.name AS adminName, um.phone AS adminPhone
+        FROM t_parklot lot
+        LEFT JOIN t_user_mobile um on lot.mobile_user_id = um.id
+        WHERE 1=1
+        AND um.id = #{adminId}
+    </select>
+
+    <!-- 根据小区更心管理员信息 -->
+    <update id="updateAdminUserDetailed" parameterType="com.qhieco.request.web.ParklotRequest">
+        UPDATE  t_user_mobile SET name=#{adminName},phone=#{adminPhone}
+        WHERE id = #{adminId}
+    </update>
+
+    <!-- 获取用户类型与小区关联数据 -->
+    <select id="findAdminUserIsExistByParklot" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT pt.id,pt.name,pt.address,um.type AS adminType,um.id AS adminId,um.name AS adminName,um.phone AS adminPhone
+            FROM t_user_mobile um
+            LEFT JOIN t_parklot pt ON pt.mobile_user_id = um.id
+            WHERE 1=1
+              AND um.phone = #{adminPhone}
+    </select>
+
+    <!-- 判断该账户是否存在可开票余额(开票订单) -->
+    <select id="findAdminUserByApply" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT um.id as adminId,um.name as adminName,um.phone as adminPhone
+            FROM t_balance_user bu
+            LEFT JOIN t_user_mobile um ON bu.mobile_user_id = um.id
+            LEFT JOIN t_apply_invoice ai ON ai.mobile_user_id = um.id
+            WHERE 1=1
+                AND um.phone = #{adminPhone}
+                AND (ai.state=#{applyState}  OR bu.balance_invoice > 0 )
+                GROUP BY um.id
+    </select>
+
+    <!-- 判断该账户是否存在进行中订单 -->
+    <select id="findAdminByOrder" parameterType="com.qhieco.request.web.ParklotRequest" resultType="com.qhieco.response.data.web.ParkLotData">
+        SELECT um.id as adminId,um.name as adminName,um.phone as adminPhone
+            FROM t_user_mobile um
+            LEFT JOIN t_order_parking op ON op.mobile_user_id = um.id
+            WHERE op.state NOT in(1304,1307,1308,1309,1310)
+    </select>
+</mapper>

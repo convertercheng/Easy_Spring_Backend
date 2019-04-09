@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.webbitemmapper.PermissionBItemMapper">
+    <select id="findByUserId" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.web.PermissionBItemData">
+        SELECT  t1.*
+          FROM bi_permission t1
+          LEFT JOIN bi_role_permission rp on rp.permission_id = t1.id
+          LEFT JOIN bi_role r on r.id = rp.role_id
+          LEFT JOIN bi_user_role ur on ur.role_id = r.id
+          LEFT JOIN bi_user_web us on us.id = ur.user_id
+            WHERE 1=1 AND us.id=#{userId}
+    </select>
+
+</mapper>

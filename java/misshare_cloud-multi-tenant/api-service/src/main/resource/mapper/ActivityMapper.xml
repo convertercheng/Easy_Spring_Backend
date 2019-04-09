@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ActivityMapper">
+<select id="findActivityByType" resultType="com.qhieco.response.data.api.ActivityRespData">
+        SELECT  a.id,
+                a.name,
+                a.type,
+                art.trigger_type triggerType
+                FROM t_activity a
+                LEFT JOIN t_activity_rule ar ON a.id = ar.activity_id AND ar.state = 1
+                LEFT JOIN t_activity_rule_trigger art ON ar.id = art.activity_rule_id AND art.state = 1
+                WHERE 1=1
+                AND a.state = 1 AND a.begin_time &lt;= UNIX_TIMESTAMP(NOW())*1000 AND a.end_time &gt;= UNIX_TIMESTAMP(NOW())*1000
+                AND art.trigger_type=#{type}
+    </select>
+
+    <select id="findActivityTriggerTypeById" parameterType="java.lang.Integer" resultType="com.qhieco.response.data.api.ActivityRespData">
+        SELECT a.id,
+        a.name name,
+        art.trigger_type triggerType
+        FROM t_activity a
+        LEFT JOIN t_activity_rule ar ON a.id = ar.activity_id AND ar.state = 1
+        LEFT JOIN t_activity_rule_trigger art ON ar.id = art.activity_rule_id AND art.state = 1
+        WHERE a.id = #{activityId}
+    </select>
+<select id="queryActivityList" resultType="com.qhieco.response.data.api.ActivityRespData">
+        
+            SELECT tac.id, tac.`name`, tac.type, tac.intro, tac.href, tac.begin_time beginTime, tac.end_time endTime,
+            (SELECT tf.path from t_file tf WHERE tf.id=baf.file_id ) filePath
+            from t_activity tac INNER JOIN b_activity_file baf ON baf.activity_id=tac.id WHERE baf.state=#{activityFileState} AND tac.state=1
+             AND tac.begin_time&lt;= #{now} AND tac.end_time&gt; #{now}
+            ORDER BY tac.create_time  desc
+            LIMIT #{startPage}, #{pageSize};
+        
+    </select>
+
+    
+    </mapper>

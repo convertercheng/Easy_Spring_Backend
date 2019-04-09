@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>test</title>
+</head>
+<body>
+<div class="middle">
+	<script >
+		var age = prompt("请输入姓名");
+		if(age>18){
+			alert("welcome!");
+		}
+		else if(age<18&&age>0){
+			alert("you are limited")
+		}else{
+			alert("invalid input!")
+		}
+	</script>
+	<p id="p1" style="font-family: 'Arial,Black',sans-serif;">abcdefghijklmnopqrstuvwxyz</p>
+	<p id="p2" style="font-family: 'Arial,Black',sans-serif;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+	<p id="p3" style="font-family: 'Arial,Black',sans-serif;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+	<script type="text/javascript" >
+		var name_1 = "title";
+		var name_2 = 2;
+		var name_3 = true;
+		function get_name(argument) {
+			// body...
+			if (name_3) {
+				name_2++;
+				name_3 =false;
+			}
+
+		}
+	</script>
+</div>
+<div class="behind">
+	<p id="p2" style="font-family: 'Arial,Black',sans-serif;">ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+</div>
+</body>
+<style type="text/css">
+	div[class="middle"]{
+		
+	}
+	div[class="behind"]{
+		
+	}
+	#p1{
+		width: 660px;
+		height: 300px;
+		background-color: red;
+		float: left;
+	}
+	#p2{
+		width: 320px;
+		height: 300px;
+		background-color: blue;
+		float: left;
+	}
+	#p3{
+		width: 1000px;
+		height: 100px;
+		background-color: lightblue;
+		clear: left;
+	}
+</style>
+</html>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qhieco.mapper.ShareMapper">
+    
+    <resultMap id="shareTimeOutMap" type="com.qhieco.time.ShareTimeOutInfo">
+        <result column="parklotId" property="parklotId"/>
+        <collection ofType="com.qhieco.time.ParklocShare" property="parklocShareList">
+            <id column="shareId" property="shareId"/>
+            <result column="parklocId" property="parklocId"/>
+            <result column="endTime" property="endTime"/>
+        </collection>
+    </resultMap>
+    
+    <update id="updateBatchShareStateByIds">
+        update t_share set state=#{state} where id IN
+        <foreach collection="parklocShareList" index="index" item="item" open="(" close=")" separator=",">
+          #{item.shareId}
+        </foreach>
+    </update>
+    
+    <insert id="insertBatch">
+      insert into t_share(parkloc_id, publish_id, start_time, end_time, state) VALUES
+      <foreach collection="shareList" separator="," item="share" index="index">
+          (#{share.parklocId}, #{share.publishId}, #{share.startTime}, #{share.endTime}, #{share.state})
+      </foreach>
+    </insert>
+    
+    <select id="queryShareTimeOutList" resultMap="shareTimeOutMap">
+        <![CDATA[
+       SELECT DISTINCT ts.`parkloc_id` parklocId, ts.id shareId,  FROM_UNIXTIME(ts.end_time/1000) endTime, tpc.parklot_id parklotId
+        FROM t_share ts INNER JOIN t_parkloc tpc ON tpc.id=ts.parkloc_id
+        WHERE ts.end_time - UNIX_TIMESTAMP(NOW())*1000 <= #{timeInterval}
+         AND UNIX_TIMESTAMP(NOW()) * 1000 BETWEEN ts.`start_time` AND ts.`end_time` AND ts.`state`=1
+          ]]>
+    </select>
+
+
+</mapper>

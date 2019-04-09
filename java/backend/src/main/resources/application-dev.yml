@@ -1,0 +1,30 @@
+web:
+  upload-path: /home/cheng/data/
+  upload-path-pic: /home/cheng/data/
+spring:
+  mvc:
+    static-path-pattern: /**
+  resources:
+    static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/,file:${web.upload-path}
+
+  ########################################################
+  ### datasource
+  ########################################################
+  datasource:
+    url: jdbc:mysql://localhost:3306/myweb?useSSL=true
+    username: root
+    password: provinet433
+    driver-class-name: com.mysql.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  #    properties:
+  #      hibernate:
+  #        dialect: org.hibernate.dialect.MySQL5Dialect
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
+      cluster-nodes: 127.0.0.1:9300
+    mongodb:
+      uri: mongodb://localhost:27017/spider
